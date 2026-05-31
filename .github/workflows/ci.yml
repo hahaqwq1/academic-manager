@@ -20,7 +20,10 @@ jobs:
           cache: npm
 
       - name: Install deps
-        run: npm ci
+        # 用 npm install 而非 npm ci:本项目在 Windows 上生成 lock,esbuild 等的部分平台
+        # 可选依赖(@esbuild/linux-*)未写入 lock,Linux runner 上 npm ci 会因此报错。
+        # npm install 会容忍并按需补齐这些平台二进制(版本仍由 lock 锁定)。
+        run: npm install --no-audit --no-fund
 
       # 关键:CI 是干净检出,没有 data/app.db。build 时静态采集 /export 等页面会读库,
       # 若无表会报错,故先按迁移建好空库(空表足够让页面渲染空态,无需 seed)。
