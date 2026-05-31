@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `submissions_work_round_idx` ON `submissions` (`work_id`,`round`);

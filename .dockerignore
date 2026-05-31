@@ -1,0 +1,15 @@
+# 构建上下文排除项 —— 让镜像更小、避免把本地状态烘焙进去
+node_modules
+.next
+data
+.git
+.gitignore
+.claude
+.env.local
+npm-debug.log*
+*.log
+README.md
+DEPLOY.md
+PROJECT_SPEC.md
+AGENTS.md
+CLAUDE.md
