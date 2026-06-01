@@ -79,16 +79,16 @@ export function WorkForm({
 }: WorkFormProps) {
   // 受控字段状态。可空文本以空串承载(提交时由 server 端 schema 归一为 null)。
   const [type, setType] = useState<WorkType>(
-    (defaultValues?.type as WorkType | undefined) ?? "paper",
+    defaultValues?.type ?? "paper",
   );
   const [title, setTitle] = useState<string>(defaultValues?.title ?? "");
   const [status, setStatus] = useState<WorkStatus>(
-    (defaultValues?.status as WorkStatus | undefined) ?? "构思",
+    defaultValues?.status ?? "构思",
   );
   const [authors, setAuthors] = useState<string>(defaultValues?.authors ?? "");
   // author_role:可空枚举。空串表示「未选择」,提交时归一为 null。
   const [authorRole, setAuthorRole] = useState<AuthorRole | "">(
-    (defaultValues?.author_role as AuthorRole | null | undefined) ?? "",
+    defaultValues?.author_role ?? "",
   );
   const [wordCount, setWordCount] = useState<string>(
     defaultValues?.word_count != null ? String(defaultValues.word_count) : "",

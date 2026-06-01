@@ -7,9 +7,24 @@
 //   (不用 sql CURRENT_TIMESTAMP,因为那不是真正的 ISO8601)。
 // - 纯日期字段(start_date / end_date / submitted_at / decided_at / published_at)
 //   用 text 存 "YYYY-MM-DD"。
-// - 枚举一律以 text 存储,英文 key 或中文值见 src/lib/constants.ts,应用层用 zod 校验。
+// - 枚举列用 drizzle 的 text({ enum }) 声明:**仅在 TS 类型层收窄为字面量联合**(0-3),
+//   生成的 SQL 仍是 text、零迁移;DB 行类型由此端到端带上联合类型,消除各处 `as` 强转。
+//   枚举源唯一仍在 src/lib/constants.ts(zod 校验同源)。
 // - 索引/唯一索引在第三个回调参数里以数组形式声明,索引名唯一且语义明确。
 import { sqliteTable, integer, text, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+
+// 用相对路径(非 @/ 别名):本文件会被 drizzle-kit / tsx 等工具直接加载,
+// 这些工具未必解析 tsconfig 的 @/ 路径别名,相对路径最稳。
+import {
+  WORK_TYPES,
+  WORK_STATUSES,
+  AUTHOR_ROLES,
+  PROJECT_LEVELS,
+  PROJECT_ROLES,
+  PROJECT_STATUSES,
+  SUBMISSION_STATUSES,
+  ENTITY_TYPES,
+} from "../lib/constants";
 
 // 当前时间的 ISO8601 字符串:构造一个 Date 实例并调用 toISOString()。
 const isoNow = () => new Date().toISOString();
@@ -20,14 +35,14 @@ export const works = sqliteTable(
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
     // 作品类型,英文 key:paper | commentary | draft | other
-    type: text("type").notNull(),
+    type: text("type", { enum: WORK_TYPES }).notNull(),
     title: text("title").notNull(),
     // 进度状态(中文值):构思|写作中|已完成|投稿中|已发表|已搁置
-    status: text("status").notNull(),
+    status: text("status", { enum: WORK_STATUSES }).notNull(),
     // 作者列表(自由文本,可空)
     authors: text("authors"),
     // 本人署名角色(中文值):第一作者|通讯作者|独著|参与
-    author_role: text("author_role"),
+    author_role: text("author_role", { enum: AUTHOR_ROLES }),
     // 字数
     word_count: integer("word_count"),
     // 摘要
@@ -59,15 +74,15 @@ export const projects = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     title: text("title").notNull(),
     // 级别(中文值):国家级|省部级|校级|其他
-    level: text("level").notNull(),
+    level: text("level", { enum: PROJECT_LEVELS }).notNull(),
     // 角色(中文值):主持|参与
-    role: text("role").notNull(),
+    role: text("role", { enum: PROJECT_ROLES }).notNull(),
     // 项目编号
     grant_no: text("grant_no"),
     // 经费
     funding: text("funding"),
     // 状态(中文值):拟申报|申报中|已立项|结题中|已结题|未中
-    status: text("status").notNull(),
+    status: text("status", { enum: PROJECT_STATUSES }).notNull(),
     // 起止日期(YYYY-MM-DD),可空
     start_date: text("start_date"),
     end_date: text("end_date"),
@@ -98,7 +113,7 @@ export const submissions = sqliteTable(
     // 投稿轮次
     round: integer("round").notNull(),
     // 状态(中文值):在审|退修|录用|被拒|已撤稿
-    status: text("status").notNull(),
+    status: text("status", { enum: SUBMISSION_STATUSES }).notNull(),
     // 投稿日期(YYYY-MM-DD)
     submitted_at: text("submitted_at").notNull(),
     // 决定日期(YYYY-MM-DD),可空(尚在审则为空)
@@ -127,7 +142,7 @@ export const entity_tags = sqliteTable(
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
     // 实体类型,英文 key:work | project
-    entity_type: text("entity_type").notNull(),
+    entity_type: text("entity_type", { enum: ENTITY_TYPES }).notNull(),
     // 多态实体 id(指向 works.id 或 projects.id)
     entity_id: integer("entity_id").notNull(),
     // 标签 id,级联删除

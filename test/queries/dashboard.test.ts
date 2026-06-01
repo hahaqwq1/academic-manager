@@ -17,6 +17,7 @@ vi.mock("@/db", () => ({
 import {
   getDashboardStats,
   getPublicationsByYear,
+  getPublicationDataHealth,
   getReviewCycleByJournal,
   getClosingProjects,
 } from "@/db/queries/dashboard";
@@ -63,17 +64,45 @@ describe("getDashboardStats", () => {
   });
 });
 
-describe("getPublicationsByYear", () => {
-  it("按发表年份聚合,升序;null/非法排除", async () => {
-    makeWork(ctx.db, { published_at: "2024-03-01" });
-    makeWork(ctx.db, { published_at: "2024-11-20" });
-    makeWork(ctx.db, { published_at: "2025-01-05" });
-    makeWork(ctx.db, { published_at: null });
-    makeWork(ctx.db, { published_at: "garbage" });
+describe("getPublicationsByYear(口径=已发表 AND published_at 非空)", () => {
+  it("仅统计『已发表』且有合法发表日期的作品,按年份升序", async () => {
+    makeWork(ctx.db, { status: "已发表", published_at: "2024-03-01" });
+    makeWork(ctx.db, { status: "已发表", published_at: "2024-11-20" });
+    makeWork(ctx.db, { status: "已发表", published_at: "2025-01-05" });
+    // 已发表但未填日期:排除(进数据健康提示,不进年度图)。
+    makeWork(ctx.db, { status: "已发表", published_at: null });
+    // 填了日期但状态非已发表:排除(口径外,与「已发表」数字一致)。
+    makeWork(ctx.db, { status: "投稿中", published_at: "2025-07-07" });
+    // 非法日期串:进 SQL 但被 parseDateOnly 拒,排除。
+    makeWork(ctx.db, { status: "已发表", published_at: "garbage" });
     expect(await getPublicationsByYear()).toEqual([
       { year: "2024", count: 2 },
       { year: "2025", count: 1 },
     ]);
+  });
+});
+
+describe("getPublicationDataHealth(口径外数据计数)", () => {
+  it("分别统计『已发表缺日期』与『有日期非已发表』", async () => {
+    makeWork(ctx.db, { status: "已发表", published_at: "2024-01-01" }); // 健康,两者都不计
+    makeWork(ctx.db, { status: "已发表", published_at: null }); // +publishedMissingDate
+    makeWork(ctx.db, { status: "已发表", published_at: null }); // +publishedMissingDate
+    makeWork(ctx.db, { status: "投稿中", published_at: "2025-01-01" }); // +datedNotPublished
+    makeWork(ctx.db, { status: "已搁置", published_at: "2025-02-01" }); // +datedNotPublished
+    makeWork(ctx.db, { status: "写作中", published_at: null }); // 两者都不计
+    expect(await getPublicationDataHealth()).toEqual({
+      publishedMissingDate: 2,
+      datedNotPublished: 2,
+    });
+  });
+
+  it("干净数据 → 全 0", async () => {
+    makeWork(ctx.db, { status: "已发表", published_at: "2024-01-01" });
+    makeWork(ctx.db, { status: "写作中", published_at: null });
+    expect(await getPublicationDataHealth()).toEqual({
+      publishedMissingDate: 0,
+      datedNotPublished: 0,
+    });
   });
 });
 

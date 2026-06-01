@@ -38,6 +38,7 @@ import {
   deleteSubmission,
   updateSubmission,
 } from "@/lib/actions/submissions";
+import { markWorkPublished } from "@/lib/actions/works";
 import type { Submission } from "@/db/schema";
 import {
   SUBMISSION_STATUSES,
@@ -64,11 +65,13 @@ function SubmissionFormDialog({
   submission,
   defaultRound,
   trigger,
+  onSuggestPublish,
 }: {
   workId: number;
   submission?: Submission;
   defaultRound: number;
   trigger: React.ReactNode;
+  onSuggestPublish: () => void;
 }) {
   const isEdit = submission !== undefined;
   const [open, setOpen] = useState(false);
@@ -89,6 +92,7 @@ function SubmissionFormDialog({
           isEdit={isEdit}
           defaultRound={defaultRound}
           onClose={() => setOpen(false)}
+          onSuggestPublish={onSuggestPublish}
         />
       </DialogContent>
     </Dialog>
@@ -102,12 +106,14 @@ function SubmissionForm({
   isEdit,
   defaultRound,
   onClose,
+  onSuggestPublish,
 }: {
   workId: number;
   submission?: Submission;
   isEdit: boolean;
   defaultRound: number;
   onClose: () => void;
+  onSuggestPublish: () => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -116,7 +122,7 @@ function SubmissionForm({
   const [journal, setJournal] = useState(submission?.journal ?? "");
   const [round, setRound] = useState(String(submission?.round ?? defaultRound));
   const [status, setStatus] = useState<SubmissionStatus>(
-    (submission?.status as SubmissionStatus | undefined) ?? "在审"
+    submission?.status ?? "在审"
   );
   const [submittedAt, setSubmittedAt] = useState(submission?.submitted_at ?? "");
   const [decidedAt, setDecidedAt] = useState(submission?.decided_at ?? "");
@@ -146,6 +152,8 @@ function SubmissionForm({
       toast.success(isEdit ? "已更新投稿轮次" : "已新增投稿轮次");
       onClose();
       router.refresh();
+      // 录用且作品尚未「已发表」:交由父组件(常驻挂载)弹出联动提示(P2-9 方案A)。
+      if (res.suggestPublish) onSuggestPublish();
     });
   };
 
@@ -275,6 +283,30 @@ export function WorkSubmissionsManager({
     });
   };
 
+  // 录用联动提示(P2-9 方案A):投稿被录用且作品尚未「已发表」时弹出,
+  // 提供「标为已发表」一键动作;由用户拍板,不自动改作品状态。
+  // 放在常驻挂载的本组件(而非随对话框卸载的表单)里,确保点击动作时上下文仍在。
+  const handleSuggestPublish = () => {
+    toast("该投稿已录用 —— 是否将作品标记为「已发表」?", {
+      description: "作品当前状态尚未标为「已发表」。发表日期可稍后在编辑页补填。",
+      duration: 10000,
+      action: {
+        label: "标为已发表",
+        onClick: () => {
+          startTransition(async () => {
+            const res = await markWorkPublished(workId);
+            if (res.ok) {
+              toast.success("已将作品标记为「已发表」");
+              router.refresh();
+            } else {
+              toast.error(res.message ?? "操作失败,请重试");
+            }
+          });
+        },
+      },
+    });
+  };
+
   return (
     <div className="space-y-3" aria-busy={isPending}>
       <div className="flex items-center justify-between gap-2">
@@ -287,6 +319,7 @@ export function WorkSubmissionsManager({
         <SubmissionFormDialog
           workId={workId}
           defaultRound={nextRound}
+          onSuggestPublish={handleSuggestPublish}
           trigger={
             <Button size="sm" variant="outline">
               <Plus />
@@ -309,12 +342,13 @@ export function WorkSubmissionsManager({
                 <span className="text-sm font-medium text-foreground">
                   {s.journal}
                 </span>
-                <SubmissionStatusBadge status={s.status as SubmissionStatus} />
+                <SubmissionStatusBadge status={s.status} />
                 <div className="ml-auto flex items-center gap-1">
                   <SubmissionFormDialog
                     workId={workId}
                     submission={s}
                     defaultRound={nextRound}
+                    onSuggestPublish={handleSuggestPublish}
                     trigger={
                       <Button variant="ghost" size="sm" aria-label="编辑轮次">
                         <Pencil />

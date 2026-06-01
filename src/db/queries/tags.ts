@@ -3,11 +3,11 @@
 // listAllTags:全部标签(供表单 / 筛选器渲染选项)。
 // listTagsWithCounts:全部标签 + 各自被作品 / 项目引用的数量(供标签管理页)。
 // getEntitiesByTag:某标签下的作品与项目(供按主题浏览)。
-import { asc, eq, and, desc, inArray } from "drizzle-orm";
+import { asc, eq, and, desc, inArray, count } from "drizzle-orm";
 
 import { db } from "@/db";
 import { tags, entity_tags, works, projects } from "@/db/schema";
-import type { Tag } from "@/db/schema";
+import type { Tag, Project } from "@/db/schema";
 import type { WorkBrief } from "@/db/queries/works";
 
 // 全部标签,按名称升序。
@@ -26,19 +26,22 @@ export async function listTagsWithCounts(): Promise<TagWithCounts[]> {
   const allTags = db.select().from(tags).orderBy(asc(tags.name)).all();
   if (allTags.length === 0) return [];
 
-  const links = db
+  // 在 SQL 层按 (tag_id, entity_type) 分组计数,取代原先全量加载 entity_tags 再 JS 累加(P3-10)。
+  const counts = db
     .select({
       tag_id: entity_tags.tag_id,
       entity_type: entity_tags.entity_type,
+      n: count(),
     })
     .from(entity_tags)
+    .groupBy(entity_tags.tag_id, entity_tags.entity_type)
     .all();
 
   const workCounts = new Map<number, number>();
   const projectCounts = new Map<number, number>();
-  for (const link of links) {
-    const map = link.entity_type === "work" ? workCounts : projectCounts;
-    map.set(link.tag_id, (map.get(link.tag_id) ?? 0) + 1);
+  for (const c of counts) {
+    const map = c.entity_type === "work" ? workCounts : projectCounts;
+    map.set(c.tag_id, c.n);
   }
 
   return allTags.map((t) => ({
@@ -48,14 +51,11 @@ export async function listTagsWithCounts(): Promise<TagWithCounts[]> {
   }));
 }
 
-// 项目精简信息(供按标签浏览)。
-export interface ProjectBrief {
-  id: number;
-  title: string;
-  level: string;
-  role: string;
-  status: string;
-}
+// 项目精简信息(供按标签浏览)。复用 Project 的列级枚举类型(0-3),level/role/status 即联合类型。
+export type ProjectBrief = Pick<
+  Project,
+  "id" | "title" | "level" | "role" | "status"
+>;
 
 // 某标签下的作品与项目。tag 不存在时返回 null。
 export interface EntitiesByTag {

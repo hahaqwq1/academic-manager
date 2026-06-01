@@ -29,12 +29,12 @@ import { ProjectStatusBadge } from "@/components/projects/project-badges";
 import {
   getDashboardStats,
   getPublicationsByYear,
+  getPublicationDataHealth,
   getReviewCycleByJournal,
   getClosingProjects,
 } from "@/db/queries/dashboard";
 import { listTagsWithCounts } from "@/db/queries/tags";
 import { listPendingSubmissions } from "@/db/queries/submissions";
-import type { ProjectStatus } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -65,15 +65,29 @@ function DashCard({
 }
 
 export default async function DashboardPage() {
-  const [stats, pubByYear, cycles, closing, tagCounts, pending] =
+  const [stats, pubByYear, pubHealth, cycles, closing, tagCounts, pending] =
     await Promise.all([
       getDashboardStats(),
       getPublicationsByYear(),
+      getPublicationDataHealth(),
       getReviewCycleByJournal(),
       getClosingProjects(),
       listTagsWithCounts(),
       listPendingSubmissions(),
     ]);
+
+  // 年度图口径外的发表数据(仅在存在时提示,空库/干净数据不打扰)。
+  const pubHealthMsgs: string[] = [];
+  if (pubHealth.publishedMissingDate > 0) {
+    pubHealthMsgs.push(
+      `${pubHealth.publishedMissingDate} 件「已发表」未填发表日期`
+    );
+  }
+  if (pubHealth.datedNotPublished > 0) {
+    pubHealthMsgs.push(
+      `${pubHealth.datedNotPublished} 件填了发表日期但状态非「已发表」`
+    );
+  }
 
   // 主题方向分布:作品 + 项目计数 > 0 的标签。
   const tagDist = tagCounts
@@ -109,6 +123,12 @@ export default async function DashboardPage() {
         {/* 图表行 1 */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <DashCard title="年度发表数">
+            {pubHealthMsgs.length > 0 ? (
+              <p className="mb-3 flex items-start gap-1.5 text-xs text-warning">
+                <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+                <span>{pubHealthMsgs.join(";")},未计入年度统计</span>
+              </p>
+            ) : null}
             <PublicationsBarChart data={pubByYear} />
           </DashCard>
           <DashCard title="主题方向分布">
@@ -221,7 +241,7 @@ export default async function DashboardPage() {
                         >
                           {p.title}
                         </Link>
-                        <ProjectStatusBadge status={p.status as ProjectStatus} />
+                        <ProjectStatusBadge status={p.status} />
                         <span className="text-xs text-muted-foreground">
                           {p.end_date ? `截止 ${formatDate(p.end_date)}` : "未设截止"}
                           {p.daysToDeadline !== null

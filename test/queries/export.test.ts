@@ -76,6 +76,19 @@ describe("getProjectsWithOutputs", () => {
     const list = await getProjectsWithOutputs();
     expect(list[0].outputs).toEqual([]);
   });
+
+  it("同发表日期(并列)的成果按 work_id 升序确定排序(P3-10 对抗审查)", async () => {
+    const p = makeProject(ctx.db, { title: "P" });
+    const w1 = makeWork(ctx.db, { title: "W1", published_at: "2024-01-01" });
+    const w2 = makeWork(ctx.db, { title: "W2", published_at: "2024-01-01" });
+    const w3 = makeWork(ctx.db, { title: "W3", published_at: "2024-01-01" });
+    // 乱序挂接(w3→w1→w2),但分组内输出应按 work_id 升序,与查询计划无关。
+    linkOutput(ctx.db, p.id, w3.id);
+    linkOutput(ctx.db, p.id, w1.id);
+    linkOutput(ctx.db, p.id, w2.id);
+    const [proj] = await getProjectsWithOutputs();
+    expect(proj.outputs.map((o) => o.title)).toEqual(["W1", "W2", "W3"]);
+  });
 });
 
 describe("getDatabaseDump", () => {

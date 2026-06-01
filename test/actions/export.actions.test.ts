@@ -119,6 +119,30 @@ describe("importDatabase 校验拒绝(库不变)", () => {
     expect(res.ok).toBe(false);
     expect(ctx.db.select().from(works).all()).toHaveLength(2);
   });
+
+  it("项目 end_date 早于 start_date(倒挂)→ 拒绝,库不变", async () => {
+    seedFull(ctx.db);
+    const dump = await getDatabaseDump();
+    const p = dump.projects[0] as { start_date: string | null; end_date: string | null };
+    p.start_date = "2025-01-02";
+    p.end_date = "2025-01-01";
+    const res = await importDatabase({ data: dump });
+    expect(res.ok).toBe(false);
+    expect(res.message).toContain("结束日期不能早于开始日期");
+    expect(ctx.db.select().from(works).all()).toHaveLength(2);
+  });
+
+  it("投稿 decided_at 早于 submitted_at(倒挂)→ 拒绝,库不变", async () => {
+    seedFull(ctx.db);
+    const dump = await getDatabaseDump();
+    const s = dump.submissions[0] as { submitted_at: string; decided_at: string | null };
+    s.submitted_at = "2025-09-10";
+    s.decided_at = "2025-09-09";
+    const res = await importDatabase({ data: dump });
+    expect(res.ok).toBe(false);
+    expect(res.message).toContain("决定日期不能早于投稿日期");
+    expect(ctx.db.select().from(works).all()).toHaveLength(2);
+  });
 });
 
 describe("importDatabase 引用完整性预检(清库前拦截)", () => {
@@ -197,6 +221,15 @@ describe("importDatabase 加固校验(对抗审查)", () => {
     const res = await importDatabase({ data: dump });
     expect(res.ok).toBe(false);
     expect(res.message).toContain("重复");
+  });
+
+  it("负字数(word_count=-1)→ 拒绝,库不变", async () => {
+    seedFull(ctx.db);
+    const dump = await getDatabaseDump();
+    (dump.works[0] as { word_count: number }).word_count = -1;
+    const res = await importDatabase({ data: dump });
+    expect(res.ok).toBe(false);
+    expect(ctx.db.select().from(works).all()).toHaveLength(2);
   });
 });
 

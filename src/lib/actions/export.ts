@@ -62,7 +62,7 @@ const workRow = z.object({
   status: workStatusSchema,
   authors: nullableText,
   author_role: authorRoleSchema.nullable(),
-  word_count: z.number().int().nullable(),
+  word_count: z.number().int().min(0, "字数不能为负数").nullable(),
   summary: nullableText,
   notes: nullableText,
   file_path: nullableText,
@@ -71,31 +71,43 @@ const workRow = z.object({
   updated_at: isoTimestamp,
 });
 
-const projectRow = z.object({
-  id: intId,
-  title: z.string().trim().min(1, "项目标题不能为空"),
-  level: projectLevelSchema,
-  role: projectRoleSchema,
-  grant_no: nullableText,
-  funding: nullableText,
-  status: projectStatusSchema,
-  start_date: nullableCalendarDate,
-  end_date: nullableCalendarDate,
-  notes: nullableText,
-  created_at: isoTimestamp,
-  updated_at: isoTimestamp,
-});
+const projectRow = z
+  .object({
+    id: intId,
+    title: z.string().trim().min(1, "项目标题不能为空"),
+    level: projectLevelSchema,
+    role: projectRoleSchema,
+    grant_no: nullableText,
+    funding: nullableText,
+    status: projectStatusSchema,
+    start_date: nullableCalendarDate,
+    end_date: nullableCalendarDate,
+    notes: nullableText,
+    created_at: isoTimestamp,
+    updated_at: isoTimestamp,
+  })
+  // 跨字段日期校验:与表单 projectInputSchema 同源,坏备份(end<start)在清库前就被拦。
+  .refine((v) => !(v.start_date && v.end_date) || v.end_date >= v.start_date, {
+    path: ["end_date"],
+    message: "结束日期不能早于开始日期",
+  });
 
-const submissionRow = z.object({
-  id: intId,
-  work_id: intId,
-  journal: z.string().trim().min(1, "期刊不能为空"),
-  round: z.number().int().min(1),
-  status: submissionStatusSchema,
-  submitted_at: calendarDate,
-  decided_at: nullableCalendarDate,
-  review_notes: nullableText,
-});
+const submissionRow = z
+  .object({
+    id: intId,
+    work_id: intId,
+    journal: z.string().trim().min(1, "期刊不能为空"),
+    round: z.number().int().min(1),
+    status: submissionStatusSchema,
+    submitted_at: calendarDate,
+    decided_at: nullableCalendarDate,
+    review_notes: nullableText,
+  })
+  // 跨字段日期校验:与表单 submissionInputSchema 同源(decided>=submitted)。
+  .refine((v) => !v.decided_at || v.decided_at >= v.submitted_at, {
+    path: ["decided_at"],
+    message: "决定日期不能早于投稿日期",
+  });
 
 const tagRow = z.object({
   id: intId,

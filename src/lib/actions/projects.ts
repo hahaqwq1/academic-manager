@@ -53,6 +53,8 @@ export async function createProject(
   }
 
   const { tagIds, ...data } = parsed.data;
+  // 去重 tagIds:重复选择不应触发 entity_tags 唯一索引报错而让整笔保存失败。
+  const uniqueTagIds = [...new Set(tagIds)];
 
   let newId: number;
   try {
@@ -73,10 +75,10 @@ export async function createProject(
         .returning({ id: projects.id })
         .all();
 
-      if (tagIds.length > 0) {
+      if (uniqueTagIds.length > 0) {
         tx.insert(entity_tags)
           .values(
-            tagIds.map((tagId) => ({
+            uniqueTagIds.map((tagId) => ({
               entity_type: "project" as const,
               entity_id: row.id,
               tag_id: tagId,
@@ -113,10 +115,12 @@ export async function updateProject(
   }
 
   const { tagIds, ...data } = parsed.data;
+  const uniqueTagIds = [...new Set(tagIds)];
 
   try {
     db.transaction((tx) => {
-      tx.update(projects)
+      const info = tx
+        .update(projects)
         .set({
           title: data.title,
           level: data.level,
@@ -130,6 +134,11 @@ export async function updateProject(
         })
         .where(eq(projects.id, id))
         .run();
+      // 0 行变更:项目已被删除/不存在 —— 抛错回滚,避免写入指向不存在项目的孤儿标签
+      //(与 markWorkPublished / updateSubmission 同款 changes 校验)。
+      if (info.changes === 0) {
+        throw new Error("项目不存在或已被删除");
+      }
 
       tx.delete(entity_tags)
         .where(
@@ -140,10 +149,10 @@ export async function updateProject(
         )
         .run();
 
-      if (tagIds.length > 0) {
+      if (uniqueTagIds.length > 0) {
         tx.insert(entity_tags)
           .values(
-            tagIds.map((tagId) => ({
+            uniqueTagIds.map((tagId) => ({
               entity_type: "project" as const,
               entity_id: id,
               tag_id: tagId,

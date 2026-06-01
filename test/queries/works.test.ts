@@ -67,10 +67,28 @@ describe("listWorks", () => {
     expect((await listWorks({ q: "   " })).total).toBe(3);
   });
 
-  it("LIKE 不转义通配符:q='%' 匹配全部(刻意记录该现状)", async () => {
-    makeWork(ctx.db, { title: "甲" });
-    makeWork(ctx.db, { title: "乙" });
-    expect((await listWorks({ q: "%" })).total).toBe(2);
+  it("LIKE 通配符按字面量转义(0-2):% / _ / \\ 不再当通配符", async () => {
+    makeWork(ctx.db, { title: "降价50%促销" });
+    makeWork(ctx.db, { title: "编号50A促销" }); // 含 50,但非字面 "50%"
+    makeWork(ctx.db, { title: "第1_2章" });
+    makeWork(ctx.db, { title: "第1X2章" }); // 含 1?2,但非字面 "1_2"
+    makeWork(ctx.db, { title: "路径C\\盘" });
+    // % 按字面量:只命中真含 "50%" 的
+    expect((await listWorks({ q: "50%" })).items.map((w) => w.title)).toEqual([
+      "降价50%促销",
+    ]);
+    // _ 按字面量:只命中真含 "1_2" 的
+    expect((await listWorks({ q: "1_2" })).items.map((w) => w.title)).toEqual([
+      "第1_2章",
+    ]);
+    // 反斜杠不破坏查询,按字面量匹配
+    expect((await listWorks({ q: "C\\盘" })).items.map((w) => w.title)).toEqual([
+      "路径C\\盘",
+    ]);
+    // 裸 % 不再匹配全部:只命中标题里真含 "%" 的那一条
+    expect((await listWorks({ q: "%" })).items.map((w) => w.title)).toEqual([
+      "降价50%促销",
+    ]);
   });
 
   it("tagId 子查询筛选;不存在的标签 → 零结果", async () => {

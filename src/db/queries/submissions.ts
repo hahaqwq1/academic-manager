@@ -10,23 +10,8 @@ import { db } from "@/db";
 import { submissions, works } from "@/db/schema";
 import type { Submission } from "@/db/schema";
 import { OVERDUE_DAYS } from "@/lib/constants";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-// 把 YYYY-MM-DD 解析为本地零点 Date;非法返回 null。
-function parseDateOnly(value: string | null): Date | null {
-  if (!value) return null;
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
-  if (!m) return null;
-  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-// 今天的本地零点。
-function startOfToday(): Date {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-}
+import type { WorkType, SubmissionStatus } from "@/lib/constants";
+import { DAY_MS, parseDateOnly, startOfToday } from "@/lib/format";
 
 export async function listSubmissionsForWork(
   workId: number
@@ -44,10 +29,10 @@ export interface PendingSubmission {
   id: number;
   work_id: number;
   work_title: string;
-  work_type: string;
+  work_type: WorkType;
   journal: string;
   round: number;
-  status: string;
+  status: SubmissionStatus;
   submitted_at: string;
   review_notes: string | null;
   daysElapsed: number;

@@ -14,6 +14,12 @@ import { WorkSubmissionsManager } from "@/components/submissions/work-submission
 import { formatDate, formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/common/page-header";
 import {
+  EMPTY,
+  displayValue as display,
+  DetailField as Field,
+  DetailBlockField as BlockField,
+} from "@/components/common/detail-fields";
+import {
   WorkStatusBadge,
   WorkTypeBadge,
 } from "@/components/works/work-badges";
@@ -27,62 +33,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-
-// 空值占位符:用于行内字段值为空时的统一展示。
-const EMPTY = "—";
-
-// 把可空文本归一为展示字符串:空 / 仅空白 → 「—」。
-function display(value: string | null | undefined): string {
-  if (value === null || value === undefined) return EMPTY;
-  const trimmed = value.trim();
-  return trimmed === "" ? EMPTY : trimmed;
-}
-
-// 单行字段:左侧标签 + 右侧值;值缺省时弱化为占位符颜色。
-function Field({
-  label,
-  value,
-  empty,
-}: {
-  label: string;
-  value: React.ReactNode;
-  empty?: boolean;
-}) {
-  return (
-    <div className="grid grid-cols-[6rem_1fr] gap-3 py-2 text-sm sm:grid-cols-[7rem_1fr]">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={empty ? "text-muted-foreground" : "text-foreground"}>
-        {value}
-      </dd>
-    </div>
-  );
-}
-
-// 多行文本字段(摘要 / 备注):值占满一行,保留换行。
-function BlockField({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | null | undefined;
-}) {
-  const text = display(value);
-  const isEmpty = text === EMPTY;
-  return (
-    <div className="space-y-1.5 py-2 text-sm">
-      <p className="text-muted-foreground">{label}</p>
-      <p
-        className={
-          isEmpty
-            ? "text-muted-foreground"
-            : "whitespace-pre-wrap leading-relaxed text-foreground"
-        }
-      >
-        {text}
-      </p>
-    </div>
-  );
-}
 
 export async function generateMetadata({
   params,
@@ -126,10 +76,8 @@ export default async function WorkDetailPage({
         {/* 标题已由页眉(PageHeader)承载,卡片头仅呈现类型 / 状态徽标,避免标题重复 */}
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2">
-            <WorkTypeBadge type={work.type as Parameters<typeof WorkTypeBadge>[0]["type"]} />
-            <WorkStatusBadge
-              status={work.status as Parameters<typeof WorkStatusBadge>[0]["status"]}
-            />
+            <WorkTypeBadge type={work.type} />
+            <WorkStatusBadge status={work.status} />
           </div>
         </CardHeader>
 

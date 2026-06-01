@@ -107,6 +107,24 @@ describe("workInputSchema", () => {
     expect(workInputSchema.parse({ ...base, tagIds: [1, 2, 3] }).tagIds).toEqual([1, 2, 3]);
     expect(workInputSchema.safeParse({ ...base, tagIds: ["a"] }).success).toBe(false);
   });
+
+  describe("文本长度上限(P3-12)", () => {
+    it("summary:边界 10000 通过,超出被拒", () => {
+      expect(workInputSchema.safeParse({ ...base, summary: "字".repeat(10000) }).success).toBe(true);
+      expect(workInputSchema.safeParse({ ...base, summary: "字".repeat(10001) }).success).toBe(false);
+    });
+    it("notes:边界 5000 通过,超出被拒", () => {
+      expect(workInputSchema.safeParse({ ...base, notes: "字".repeat(5000) }).success).toBe(true);
+      expect(workInputSchema.safeParse({ ...base, notes: "字".repeat(5001) }).success).toBe(false);
+    });
+    it("file_path:边界 500 通过,超出被拒", () => {
+      expect(workInputSchema.safeParse({ ...base, file_path: "a".repeat(500) }).success).toBe(true);
+      expect(workInputSchema.safeParse({ ...base, file_path: "a".repeat(501) }).success).toBe(false);
+    });
+    it("空值不受长度约束(纯空白仍 → null)", () => {
+      expect(workInputSchema.parse({ ...base, summary: "   " }).summary).toBeNull();
+    });
+  });
 });
 
 describe("projectInputSchema", () => {
@@ -131,6 +149,35 @@ describe("projectInputSchema", () => {
   it("起止日期沿用日历校验", () => {
     expect(projectInputSchema.safeParse({ ...base, start_date: "2024-02-30" }).success).toBe(false);
     expect(projectInputSchema.parse({ ...base, start_date: "2023-01-01", end_date: "2025-12-31" }).end_date).toBe("2025-12-31");
+  });
+
+  it("notes 超 5000 字被拒,边界 5000 通过(P3-12)", () => {
+    expect(projectInputSchema.safeParse({ ...base, notes: "字".repeat(5000) }).success).toBe(true);
+    expect(projectInputSchema.safeParse({ ...base, notes: "字".repeat(5001) }).success).toBe(false);
+  });
+
+  describe("跨字段:结束日期不得早于开始日期", () => {
+    it("end < start 被拒,错误挂在 end_date 字段", () => {
+      const r = projectInputSchema.safeParse({ ...base, start_date: "2025-01-02", end_date: "2025-01-01" });
+      expect(r.success).toBe(false);
+      if (!r.success) {
+        expect(
+          r.error.issues.some(
+            (i) => i.path.includes("end_date") && i.message === "结束日期不能早于开始日期"
+          )
+        ).toBe(true);
+      }
+    });
+    it("end == start 通过(同日合法)", () => {
+      expect(projectInputSchema.safeParse({ ...base, start_date: "2025-01-01", end_date: "2025-01-01" }).success).toBe(true);
+    });
+    it("end > start 通过", () => {
+      expect(projectInputSchema.safeParse({ ...base, start_date: "2023-01-01", end_date: "2025-12-31" }).success).toBe(true);
+    });
+    it("仅一端有值不触发跨字段校验", () => {
+      expect(projectInputSchema.safeParse({ ...base, start_date: "2025-06-01" }).success).toBe(true);
+      expect(projectInputSchema.safeParse({ ...base, end_date: "2025-06-01" }).success).toBe(true);
+    });
   });
 });
 
@@ -178,5 +225,28 @@ describe("submissionInputSchema", () => {
 
   it("status 枚举校验", () => {
     expect(submissionInputSchema.safeParse({ ...base, status: "待定" }).success).toBe(false);
+  });
+
+  describe("跨字段:决定日期不得早于投稿日期", () => {
+    it("decided < submitted 被拒,错误挂在 decided_at 字段", () => {
+      const r = submissionInputSchema.safeParse({ ...base, submitted_at: "2025-09-10", decided_at: "2025-09-09" });
+      expect(r.success).toBe(false);
+      if (!r.success) {
+        expect(
+          r.error.issues.some(
+            (i) => i.path.includes("decided_at") && i.message === "决定日期不能早于投稿日期"
+          )
+        ).toBe(true);
+      }
+    });
+    it("decided == submitted 通过(同日合法)", () => {
+      expect(submissionInputSchema.safeParse({ ...base, submitted_at: "2025-09-10", decided_at: "2025-09-10" }).success).toBe(true);
+    });
+    it("decided > submitted 通过", () => {
+      expect(submissionInputSchema.safeParse({ ...base, submitted_at: "2025-09-10", decided_at: "2025-11-28" }).success).toBe(true);
+    });
+    it("decided 为空 / 空串不触发跨字段校验", () => {
+      expect(submissionInputSchema.safeParse({ ...base, decided_at: "" }).success).toBe(true);
+    });
   });
 });

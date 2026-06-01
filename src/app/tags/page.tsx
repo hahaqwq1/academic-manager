@@ -13,12 +13,6 @@ import {
   ProjectStatusBadge,
 } from "@/components/projects/project-badges";
 import { listTagsWithCounts, getEntitiesByTag } from "@/db/queries/tags";
-import type {
-  ProjectLevel,
-  ProjectStatus,
-  WorkStatus,
-  WorkType,
-} from "@/lib/constants";
 
 export const metadata: Metadata = { title: "标签" };
 
@@ -89,8 +83,8 @@ export default async function TagsPage({ searchParams }: TagsPageProps) {
                           >
                             {w.title}
                           </Link>
-                          <WorkTypeBadge type={w.type as WorkType} />
-                          <WorkStatusBadge status={w.status as WorkStatus} />
+                          <WorkTypeBadge type={w.type} />
+                          <WorkStatusBadge status={w.status} />
                         </li>
                       ))}
                     </ul>
@@ -115,8 +109,8 @@ export default async function TagsPage({ searchParams }: TagsPageProps) {
                           >
                             {p.title}
                           </Link>
-                          <ProjectLevelBadge level={p.level as ProjectLevel} />
-                          <ProjectStatusBadge status={p.status as ProjectStatus} />
+                          <ProjectLevelBadge level={p.level} />
+                          <ProjectStatusBadge status={p.status} />
                         </li>
                       ))}
                     </ul>

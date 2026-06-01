@@ -14,6 +14,12 @@ import { listWorksMinimal } from "@/db/queries/works";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/common/page-header";
 import {
+  EMPTY,
+  displayValue as display,
+  DetailField as Field,
+  DetailBlockField as BlockField,
+} from "@/components/common/detail-fields";
+import {
   ProjectLevelBadge,
   ProjectRoleBadge,
   ProjectStatusBadge,
@@ -29,59 +35,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import type { ProjectLevel, ProjectRole, ProjectStatus } from "@/lib/constants";
-
-const EMPTY = "—";
-
-function display(value: string | null | undefined): string {
-  if (value === null || value === undefined) return EMPTY;
-  const trimmed = value.trim();
-  return trimmed === "" ? EMPTY : trimmed;
-}
-
-function Field({
-  label,
-  value,
-  empty,
-}: {
-  label: string;
-  value: React.ReactNode;
-  empty?: boolean;
-}) {
-  return (
-    <div className="grid grid-cols-[6rem_1fr] gap-3 py-2 text-sm sm:grid-cols-[7rem_1fr]">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={empty ? "text-muted-foreground" : "text-foreground"}>
-        {value}
-      </dd>
-    </div>
-  );
-}
-
-function BlockField({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | null | undefined;
-}) {
-  const text = display(value);
-  const isEmpty = text === EMPTY;
-  return (
-    <div className="space-y-1.5 py-2 text-sm">
-      <p className="text-muted-foreground">{label}</p>
-      <p
-        className={
-          isEmpty
-            ? "text-muted-foreground"
-            : "whitespace-pre-wrap leading-relaxed text-foreground"
-        }
-      >
-        {text}
-      </p>
-    </div>
-  );
-}
 
 export async function generateMetadata({
   params,
@@ -130,9 +83,9 @@ export default async function ProjectDetailPage({
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2">
-            <ProjectLevelBadge level={project.level as ProjectLevel} />
-            <ProjectStatusBadge status={project.status as ProjectStatus} />
-            <ProjectRoleBadge role={project.role as ProjectRole} />
+            <ProjectLevelBadge level={project.level} />
+            <ProjectStatusBadge status={project.status} />
+            <ProjectRoleBadge role={project.role} />
           </div>
         </CardHeader>
 

@@ -4,12 +4,13 @@
 // getWorkById:单条作品 + 其标签;不存在返回 null。
 //
 // 标签关联:entity_tags 多态表(entity_type='work' and entity_id=works.id and tag_id)。
-import { eq, and, or, like, inArray, desc, count } from "drizzle-orm";
+import { eq, and, or, inArray, desc, count } from "drizzle-orm";
 
 import { db } from "@/db";
 import { works, entity_tags, tags } from "@/db/schema";
 import type { Work, Tag } from "@/db/schema";
 import type { WorkType, WorkStatus } from "@/lib/constants";
+import { likeContains } from "@/lib/like";
 
 // 作品 + 其标签列表。
 export interface WorkWithTags extends Work {
@@ -83,9 +84,9 @@ export async function listWorks(
     conditions.push(eq(works.status, params.status));
   }
   if (params.q && params.q.trim() !== "") {
-    const keyword = `%${params.q.trim()}%`;
+    const q = params.q.trim();
     conditions.push(
-      or(like(works.title, keyword), like(works.summary, keyword))
+      or(likeContains(works.title, q), likeContains(works.summary, q))
     );
   }
   if (params.tagId !== undefined) {

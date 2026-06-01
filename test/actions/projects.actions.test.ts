@@ -65,6 +65,20 @@ describe("createProject", () => {
     expect(res.ok).toBe(false);
     expect(ctx.db.select().from(projects).all()).toHaveLength(0);
   });
+
+  it("重复 tagIds 去重:只建一条关联,不触发唯一索引报错", async () => {
+    const tag = makeTag(ctx.db, "T");
+    await expect(
+      createProject({ ...valid, tagIds: [tag.id, tag.id, tag.id] })
+    ).rejects.toThrow("NEXT_REDIRECT:/projects/1");
+    expect(
+      ctx.db
+        .select()
+        .from(entity_tags)
+        .where(and(eq(entity_tags.entity_type, "project"), eq(entity_tags.entity_id, 1)))
+        .all()
+    ).toHaveLength(1);
+  });
 });
 
 describe("updateProject", () => {
@@ -84,6 +98,35 @@ describe("updateProject", () => {
       .where(and(eq(entity_tags.entity_type, "project"), eq(entity_tags.entity_id, p.id)))
       .all();
     expect(links.map((l) => l.tag_id)).toEqual([b.id]);
+  });
+
+  it("目标项目不存在(0 行变更)→ ok:false,且不写入孤儿标签", async () => {
+    const tag = makeTag(ctx.db, "T");
+    const res = await updateProject(9999, { ...valid, tagIds: [tag.id] });
+    expect(res.ok).toBe(false);
+    expect(res.message).toBe("项目不存在或已被删除");
+    expect(
+      ctx.db
+        .select()
+        .from(entity_tags)
+        .where(and(eq(entity_tags.entity_type, "project"), eq(entity_tags.entity_id, 9999)))
+        .all()
+    ).toHaveLength(0);
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("重复 tagIds 去重:只建一条关联", async () => {
+    const p = makeProject(ctx.db, { title: "P" });
+    const a = makeTag(ctx.db, "A");
+    await expect(
+      updateProject(p.id, { ...valid, title: "改", tagIds: [a.id, a.id] })
+    ).rejects.toThrow(`NEXT_REDIRECT:/projects/${p.id}`);
+    const links = ctx.db
+      .select()
+      .from(entity_tags)
+      .where(and(eq(entity_tags.entity_type, "project"), eq(entity_tags.entity_id, p.id)))
+      .all();
+    expect(links.map((l) => l.tag_id)).toEqual([a.id]);
   });
 });
 

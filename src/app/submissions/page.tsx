@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { SubmissionStatusBadge } from "@/components/submissions/submission-badges";
 import { WorkTypeBadge } from "@/components/works/work-badges";
 import { listPendingSubmissions } from "@/db/queries/submissions";
-import { OVERDUE_DAYS, type WorkType } from "@/lib/constants";
+import { OVERDUE_DAYS } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -76,7 +76,7 @@ export default async function SubmissionsPage() {
                   >
                     {s.work_title}
                   </Link>
-                  <WorkTypeBadge type={s.work_type as WorkType} />
+                  <WorkTypeBadge type={s.work_type} />
                   <SubmissionStatusBadge status="在审" />
                   {s.isOverdue ? (
                     <Badge

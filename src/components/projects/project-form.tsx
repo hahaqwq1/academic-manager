@@ -70,13 +70,13 @@ export function ProjectForm({
 }: ProjectFormProps) {
   const [title, setTitle] = useState<string>(defaultValues?.title ?? "");
   const [level, setLevel] = useState<ProjectLevel>(
-    (defaultValues?.level as ProjectLevel | undefined) ?? "校级",
+    defaultValues?.level ?? "校级",
   );
   const [role, setRole] = useState<ProjectRole>(
-    (defaultValues?.role as ProjectRole | undefined) ?? "主持",
+    defaultValues?.role ?? "主持",
   );
   const [status, setStatus] = useState<ProjectStatus>(
-    (defaultValues?.status as ProjectStatus | undefined) ?? "拟申报",
+    defaultValues?.status ?? "拟申报",
   );
   const [grantNo, setGrantNo] = useState<string>(defaultValues?.grant_no ?? "");
   const [funding, setFunding] = useState<string>(defaultValues?.funding ?? "");

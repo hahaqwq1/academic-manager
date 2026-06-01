@@ -29,7 +29,6 @@ import {
 import { WorkStatusBadge, WorkTypeBadge } from "@/components/works/work-badges";
 import { linkProjectOutput, unlinkProjectOutput } from "@/lib/actions/projects";
 import type { WorkBrief } from "@/db/queries/works";
-import type { WorkStatus, WorkType } from "@/lib/constants";
 
 interface ProjectOutputsManagerProps {
   projectId: number;
@@ -145,8 +144,8 @@ export function ProjectOutputsManager({
                 >
                   {work.title}
                 </Link>
-                <WorkTypeBadge type={work.type as WorkType} />
-                <WorkStatusBadge status={work.status as WorkStatus} />
+                <WorkTypeBadge type={work.type} />
+                <WorkStatusBadge status={work.status} />
               </div>
               <Button
                 variant="ghost"

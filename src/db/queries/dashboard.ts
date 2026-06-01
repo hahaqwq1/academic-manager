@@ -6,25 +6,12 @@
 //   - getReviewCycleByJournal:各期刊平均审稿周期(由已出结果的投稿 decided-submitted 计算)。
 //   - getClosingProjects:结题中 / 临近结题(end_date 在未来 90 天内或已过期且未结题)的项目(待办)。
 // 标签分布复用 listTagsWithCounts;在投 / 超期复用 listPendingSubmissions(见各自查询模块)。
-import { eq, isNotNull, count, and, isNull } from "drizzle-orm";
+import { eq, ne, isNotNull, count, and, isNull, notInArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import { works, projects, submissions } from "@/db/schema";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-function parseDateOnly(value: string | null): Date | null {
-  if (!value) return null;
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
-  if (!m) return null;
-  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function startOfToday(): Date {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-}
+import { DAY_MS, parseDateOnly, startOfToday } from "@/lib/format";
+import type { ProjectStatus } from "@/lib/constants";
 
 export interface DashboardStats {
   totalWorks: number;
@@ -64,10 +51,16 @@ export interface YearCount {
 }
 
 export async function getPublicationsByYear(): Promise<YearCount[]> {
+  // 口径:status=已发表 且 published_at 非空 —— 是「已发表」作品里已填发表日期的子集
+  //(年度柱必须有年份才能落桶)。注意它是 getDashboardStats.publishedWorks(全部已发表)的子集,
+  // 而非与之相等:已发表但未填日期的作品计入头部「已发表」数字却不进年度图,
+  // 二者之差由 getPublicationDataHealth 暴露(数据健康提示)。
+  // 反之,仅靠 published_at 非空(不要求已发表)会把「填了日期但状态非已发表」的作品计入,
+  // 与「已发表」口径打架,故用 status + 日期双条件。
   const rows = db
     .select({ published_at: works.published_at })
     .from(works)
-    .where(isNotNull(works.published_at))
+    .where(and(eq(works.status, "已发表"), isNotNull(works.published_at)))
     .all();
 
   const byYear = new Map<string, number>();
@@ -81,6 +74,27 @@ export async function getPublicationsByYear(): Promise<YearCount[]> {
   return [...byYear.entries()]
     .map(([year, c]) => ({ year, count: c }))
     .sort((a, b) => a.year.localeCompare(b.year));
+}
+
+// 发表数据健康度:两类「口径外」数据,用于看板年度图旁的数据健康提示。
+// 收紧年度图口径后,这两类作品都不进年度图,提示用户去补全/订正,避免「数字对不上」被误读为 bug。
+export interface PublicationDataHealth {
+  publishedMissingDate: number; // status=已发表 但 published_at 为空:计入「已发表」却缺席年度图
+  datedNotPublished: number; // published_at 非空 但 status≠已发表:有发表日期却不在已发表口径
+}
+
+export async function getPublicationDataHealth(): Promise<PublicationDataHealth> {
+  const [{ value: publishedMissingDate }] = db
+    .select({ value: count() })
+    .from(works)
+    .where(and(eq(works.status, "已发表"), isNull(works.published_at)))
+    .all();
+  const [{ value: datedNotPublished }] = db
+    .select({ value: count() })
+    .from(works)
+    .where(and(isNotNull(works.published_at), ne(works.status, "已发表")))
+    .all();
+  return { publishedMissingDate, datedNotPublished };
 }
 
 // 各期刊平均审稿周期(天),由已出结果(decided_at 非空)的投稿计算。
@@ -129,20 +143,23 @@ export async function getReviewCycleByJournal(): Promise<JournalCycle[]> {
 export interface ClosingProject {
   id: number;
   title: string;
-  status: string;
+  status: ProjectStatus;
   end_date: string | null;
   daysToDeadline: number | null; // 负数表示已过期
   reason: "结题中" | "临近结题";
 }
 
 export async function getClosingProjects(): Promise<ClosingProject[]> {
-  const rows = db.select().from(projects).all();
+  // 已结题 / 未中的项目不可能是待办,直接在 SQL 层下推排除,避免全表取出再 JS 过滤(P3-10)。
+  const rows = db
+    .select()
+    .from(projects)
+    .where(notInArray(projects.status, ["已结题", "未中"]))
+    .all();
   const today = startOfToday();
   const result: ClosingProject[] = [];
 
   for (const p of rows) {
-    if (p.status === "已结题" || p.status === "未中") continue;
-
     const end = parseDateOnly(p.end_date);
     const daysToDeadline = end
       ? Math.round((end.getTime() - today.getTime()) / DAY_MS)

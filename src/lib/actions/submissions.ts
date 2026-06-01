@@ -11,14 +11,28 @@ import { revalidatePath } from "next/cache";
 import { eq, and } from "drizzle-orm";
 
 import { db } from "@/db";
-import { submissions } from "@/db/schema";
+import { submissions, works } from "@/db/schema";
 import { submissionInputSchema } from "@/lib/validations";
 
 export type SubmissionActionState = {
   ok: boolean;
   errors?: Record<string, string>;
   message?: string;
+  // P2-9 方案A:本次投稿录用、且所属作品当前并非「已发表」时为 true。
+  // client 据此提示是否一键把作品标为「已发表」(由用户拍板,不自动改)。
+  suggestPublish?: boolean;
 };
+
+// 是否应提示联动作品状态:投稿状态为「录用」且作品当前不是「已发表」。
+function shouldSuggestPublish(workId: number, submissionStatus: string): boolean {
+  if (submissionStatus !== "录用") return false;
+  const [work] = db
+    .select({ status: works.status })
+    .from(works)
+    .where(eq(works.id, workId))
+    .all();
+  return work !== undefined && work.status !== "已发表";
+}
 
 function toFieldErrors(
   issues: { path: PropertyKey[]; message: string }[]
@@ -75,7 +89,7 @@ export async function createSubmission(
   }
 
   revalidateAll(workId);
-  return { ok: true };
+  return { ok: true, suggestPublish: shouldSuggestPublish(workId, data.status) };
 }
 
 // 更新一条投稿轮次。
@@ -94,8 +108,10 @@ export async function updateSubmission(
   }
 
   const data = parsed.data;
+  let changed = false;
   try {
-    db.update(submissions)
+    const info = db
+      .update(submissions)
       .set({
         journal: data.journal,
         round: data.round,
@@ -108,6 +124,8 @@ export async function updateSubmission(
         and(eq(submissions.id, submissionId), eq(submissions.work_id, workId))
       )
       .run();
+    // 归属校验:workId 不匹配则 0 行变更,不应据此提示联动。
+    changed = info.changes > 0;
   } catch (error) {
     return {
       ok: false,
@@ -116,7 +134,10 @@ export async function updateSubmission(
   }
 
   revalidateAll(workId);
-  return { ok: true };
+  return {
+    ok: true,
+    suggestPublish: changed && shouldSuggestPublish(workId, data.status),
+  };
 }
 
 // 删除一条投稿轮次。

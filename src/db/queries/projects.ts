@@ -5,13 +5,14 @@
 //
 // 标签关联:entity_tags 多态表(entity_type='project' and entity_id=projects.id and tag_id)。
 // 成果挂接:project_outputs(project_id, work_id)多对多。
-import { eq, and, or, like, inArray, desc, count } from "drizzle-orm";
+import { eq, and, or, inArray, desc, count } from "drizzle-orm";
 
 import { db } from "@/db";
 import { projects, entity_tags, tags, project_outputs, works } from "@/db/schema";
 import type { Project, Tag } from "@/db/schema";
 import type { WorkBrief } from "@/db/queries/works";
 import type { ProjectLevel, ProjectStatus } from "@/lib/constants";
+import { likeContains } from "@/lib/like";
 
 // 项目 + 其标签列表。
 export interface ProjectWithTags extends Project {
@@ -89,12 +90,12 @@ export async function listProjects(
     conditions.push(eq(projects.status, params.status));
   }
   if (params.q && params.q.trim() !== "") {
-    const keyword = `%${params.q.trim()}%`;
+    const q = params.q.trim();
     conditions.push(
       or(
-        like(projects.title, keyword),
-        like(projects.notes, keyword),
-        like(projects.grant_no, keyword)
+        likeContains(projects.title, q),
+        likeContains(projects.notes, q),
+        likeContains(projects.grant_no, q)
       )
     );
   }

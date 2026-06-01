@@ -52,6 +52,8 @@ export async function createWork(input: unknown): Promise<WorkActionState> {
   }
 
   const { tagIds, ...data } = parsed.data;
+  // 去重 tagIds:重复选择不应触发 entity_tags 唯一索引报错而让整笔保存失败。
+  const uniqueTagIds = [...new Set(tagIds)];
 
   let newId: number;
   try {
@@ -73,10 +75,10 @@ export async function createWork(input: unknown): Promise<WorkActionState> {
         .returning({ id: works.id })
         .all();
 
-      if (tagIds.length > 0) {
+      if (uniqueTagIds.length > 0) {
         tx.insert(entity_tags)
           .values(
-            tagIds.map((tagId) => ({
+            uniqueTagIds.map((tagId) => ({
               entity_type: "work" as const,
               entity_id: row.id,
               tag_id: tagId,
@@ -114,10 +116,12 @@ export async function updateWork(
   }
 
   const { tagIds, ...data } = parsed.data;
+  const uniqueTagIds = [...new Set(tagIds)];
 
   try {
     db.transaction((tx) => {
-      tx.update(works)
+      const info = tx
+        .update(works)
         .set({
           type: data.type,
           title: data.title,
@@ -132,6 +136,11 @@ export async function updateWork(
         })
         .where(eq(works.id, id))
         .run();
+      // 0 行变更:作品已被删除/不存在 —— 抛错回滚,避免写入指向不存在作品的孤儿标签
+      //(与 markWorkPublished / updateSubmission 同款 changes 校验)。
+      if (info.changes === 0) {
+        throw new Error("作品不存在或已被删除");
+      }
 
       // 同步标签:先删除该作品的全部标签关联,再插入当前选中项。
       tx.delete(entity_tags)
@@ -143,10 +152,10 @@ export async function updateWork(
         )
         .run();
 
-      if (tagIds.length > 0) {
+      if (uniqueTagIds.length > 0) {
         tx.insert(entity_tags)
           .values(
-            tagIds.map((tagId) => ({
+            uniqueTagIds.map((tagId) => ({
               entity_type: "work" as const,
               entity_id: id,
               tag_id: tagId,
@@ -195,5 +204,37 @@ export async function deleteWork(
   }
 
   revalidatePath("/works");
+  return { ok: true };
+}
+
+// 把作品标记为「已发表」—— P2-9 方案A:投稿录用后,由 client 提示用户一键联动作品状态。
+// 刻意只改 status,不动 published_at:录用日期 ≠ 发表日期,年度发表数依赖真实发表日期,
+// 故发表日期仍由用户在编辑页按实际填写,避免静默写入错误日期污染看板统计。
+export async function markWorkPublished(
+  id: number
+): Promise<{ ok: boolean; message?: string }> {
+  let changed = false;
+  try {
+    const info = db
+      .update(works)
+      .set({ status: "已发表" })
+      .where(eq(works.id, id))
+      .run();
+    changed = info.changes > 0;
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "操作失败,请重试",
+    };
+  }
+
+  // 0 行变更:作品已在别处被删,不报「成功」以免误导(与 updateSubmission 一致)。
+  if (!changed) {
+    return { ok: false, message: "作品不存在或已被删除" };
+  }
+
+  revalidatePath("/works");
+  revalidatePath(`/works/${id}`);
+  revalidatePath("/");
   return { ok: true };
 }

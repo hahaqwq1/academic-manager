@@ -99,3 +99,43 @@ describe("deleteSubmission 归属校验", () => {
     expect(ctx.db.select().from(submissions).where(eq(submissions.id, s.id)).all()).toHaveLength(0);
   });
 });
+
+// P2-9 方案A:录用且作品尚未「已发表」时,action 返回 suggestPublish=true 供 client 弹联动提示。
+describe("suggestPublish 录用联动提示(P2-9)", () => {
+  it("createSubmission 录用 + 作品未发表 → true", async () => {
+    const w = makeWork(ctx.db, { title: "W", status: "投稿中" });
+    const res = await createSubmission(w.id, { ...valid, status: "录用" });
+    expect(res.ok).toBe(true);
+    expect(res.suggestPublish).toBe(true);
+  });
+
+  it("作品已是「已发表」→ 不提示", async () => {
+    const w = makeWork(ctx.db, { title: "W", status: "已发表" });
+    const res = await createSubmission(w.id, { ...valid, status: "录用" });
+    expect(res.ok).toBe(true);
+    expect(res.suggestPublish).toBeFalsy();
+  });
+
+  it("非录用状态 → 不提示", async () => {
+    const w = makeWork(ctx.db, { title: "W", status: "投稿中" });
+    const res = await createSubmission(w.id, { ...valid, status: "在审" });
+    expect(res.suggestPublish).toBeFalsy();
+  });
+
+  it("updateSubmission 改为录用 → 提示", async () => {
+    const w = makeWork(ctx.db, { title: "W", status: "投稿中" });
+    const s = makeSubmission(ctx.db, w.id, { round: 1, status: "在审" });
+    const res = await updateSubmission(w.id, s.id, { ...valid, status: "录用" });
+    expect(res.ok).toBe(true);
+    expect(res.suggestPublish).toBe(true);
+  });
+
+  it("updateSubmission 归属不匹配(0 行变更)→ 不提示", async () => {
+    const w1 = makeWork(ctx.db, { title: "W1", status: "投稿中" });
+    const w2 = makeWork(ctx.db, { title: "W2", status: "投稿中" });
+    const s = makeSubmission(ctx.db, w1.id, { round: 1, status: "在审" });
+    const res = await updateSubmission(w2.id, s.id, { ...valid, status: "录用" });
+    expect(res.ok).toBe(true);
+    expect(res.suggestPublish).toBeFalsy();
+  });
+});
