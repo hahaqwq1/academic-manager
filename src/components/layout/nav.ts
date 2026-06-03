@@ -2,6 +2,7 @@ import {
   Download,
   FileText,
   FolderKanban,
+  HeartPulse,
   LayoutDashboard,
   Send,
   Tags,
@@ -23,5 +24,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/projects", label: "项目", icon: FolderKanban },
   { href: "/submissions", label: "在投", icon: Send },
   { href: "/tags", label: "标签", icon: Tags },
+  { href: "/health", label: "体检", icon: HeartPulse },
   { href: "/export", label: "导出", icon: Download },
 ];
