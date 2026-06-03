@@ -11,10 +11,10 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22 # 与 Dockerfile(node:22-slim)对齐;better-sqlite3 v12 有 node22 预编译二进制
           cache: npm

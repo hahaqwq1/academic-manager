@@ -1,0 +1,11 @@
+# 生成产物 / 数据 / 依赖,不参与格式化
+.next/
+out/
+build/
+coverage/
+node_modules/
+data/
+# drizzle 迁移 SQL 与快照由 drizzle-kit 生成,保持原样
+drizzle/
+package-lock.json
+next-env.d.ts
