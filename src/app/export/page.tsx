@@ -4,7 +4,7 @@
 // 依赖实时数据,强制动态渲染。
 import type { Metadata } from "next";
 
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, FileText } from "lucide-react";
 
 import { PageHeader } from "@/components/common/page-header";
 import { ExportClient } from "@/components/export/export-client";
@@ -38,17 +38,24 @@ export default async function ExportPage() {
       <div className="mt-6">
         <Card>
           <CardHeader>
-            <h2 className="text-sm font-semibold">截止日历(.ics)</h2>
+            <h2 className="text-sm font-semibold">下载文件</h2>
             <p className="text-xs text-muted-foreground">
-              把「投稿超期」与「项目结题」日期导出为 .ics
-              文件,导入系统日历(Apple / Google / Outlook)由其负责到点提醒。
+              成果清单 Word 文档(年度考核 / 职称 / 结题直接可交);以及「投稿超期
+              + 项目结题」截止日历 .ics,导入系统日历(Apple / Google /
+              Outlook)由其到点提醒。
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm">
+              <a href="/export/docx" download>
+                <FileText className="size-4" />
+                成果清单(.docx)
+              </a>
+            </Button>
             <Button asChild variant="outline" size="sm">
               <a href="/export/calendar" download>
                 <CalendarClock className="size-4" />
-                下载 .ics 日历
+                截止日历(.ics)
               </a>
             </Button>
           </CardContent>
