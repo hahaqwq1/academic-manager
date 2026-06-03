@@ -29,7 +29,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { importDatabase } from "@/lib/actions/export";
 import { getDatabaseDump, type DatabaseDump } from "@/db/queries/export";
-import { works, submissions, tags } from "@/db/schema";
+import { works, projects, submissions, tags } from "@/db/schema";
 
 let ctx: ReturnType<typeof createTestContext>;
 beforeEach(() => {
@@ -54,7 +54,11 @@ describe("importDatabase 往返恢复", () => {
   it("导入覆盖现有数据,保留原 id 与时间戳", async () => {
     const { w1 } = seedFull(ctx.db);
     const dump = await getDatabaseDump();
-    const [origW1] = ctx.db.select().from(works).where(eq(works.id, w1.id)).all();
+    const [origW1] = ctx.db
+      .select()
+      .from(works)
+      .where(eq(works.id, w1.id))
+      .all();
 
     // 污染当前库:多加一条作品。
     makeWork(ctx.db, { title: "W3-多余" });
@@ -67,7 +71,12 @@ describe("importDatabase 往返恢复", () => {
       data: dump,
     });
     expect(res.ok).toBe(true);
-    expect(res.counts).toMatchObject({ works: 2, projects: 1, submissions: 1, tags: 1 });
+    expect(res.counts).toMatchObject({
+      works: 2,
+      projects: 1,
+      submissions: 1,
+      tags: 1,
+    });
 
     // W3 被覆盖移除,只剩 dump 里的两条。
     const after = ctx.db.select().from(works).all();
@@ -75,8 +84,12 @@ describe("importDatabase 往返恢复", () => {
     expect(after.map((w) => w.title).sort()).toEqual(["W1", "W2"]);
 
     // id / created_at / published_at 原样保留。
-    const [restored] = ctx.db.select().from(works).where(eq(works.id, w1.id)).all();
-    expect(restored.created_at).toBe(origW1.created_at);
+    const restored = ctx.db
+      .select()
+      .from(works)
+      .where(eq(works.id, w1.id))
+      .all()[0]!;
+    expect(restored.created_at).toBe(origW1!.created_at);
     expect(restored.published_at).toBe("2025-01-01");
   });
 
@@ -87,6 +100,34 @@ describe("importDatabase 往返恢复", () => {
     const res = await importDatabase(dump);
     expect(res.ok).toBe(true);
     expect(ctx.db.select().from(works).all()).toHaveLength(2);
+  });
+
+  it("保留升级线新列(doi/journal/funding_amount/funding_currency)", async () => {
+    const w = makeWork(ctx.db, {
+      title: "W",
+      doi: "10.1/x",
+      journal: "民族研究",
+    });
+    const p = makeProject(ctx.db, {
+      title: "P",
+      funding_amount: 12.5,
+      funding_currency: "万元",
+    });
+    const dump = await getDatabaseDump();
+    makeWork(ctx.db, { title: "多余" }); // 污染当前库
+    const res = await importDatabase(dump);
+    expect(res.ok).toBe(true);
+
+    const rw = ctx.db.select().from(works).where(eq(works.id, w.id)).all()[0]!;
+    expect(rw.doi).toBe("10.1/x");
+    expect(rw.journal).toBe("民族研究");
+    const rp = ctx.db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, p.id))
+      .all()[0]!;
+    expect(rp.funding_amount).toBe(12.5);
+    expect(rp.funding_currency).toBe("万元");
   });
 });
 
@@ -123,7 +164,10 @@ describe("importDatabase 校验拒绝(库不变)", () => {
   it("项目 end_date 早于 start_date(倒挂)→ 拒绝,库不变", async () => {
     seedFull(ctx.db);
     const dump = await getDatabaseDump();
-    const p = dump.projects[0] as { start_date: string | null; end_date: string | null };
+    const p = dump.projects[0] as {
+      start_date: string | null;
+      end_date: string | null;
+    };
     p.start_date = "2025-01-02";
     p.end_date = "2025-01-01";
     const res = await importDatabase({ data: dump });
@@ -135,7 +179,10 @@ describe("importDatabase 校验拒绝(库不变)", () => {
   it("投稿 decided_at 早于 submitted_at(倒挂)→ 拒绝,库不变", async () => {
     seedFull(ctx.db);
     const dump = await getDatabaseDump();
-    const s = dump.submissions[0] as { submitted_at: string; decided_at: string | null };
+    const s = dump.submissions[0] as {
+      submitted_at: string;
+      decided_at: string | null;
+    };
     s.submitted_at = "2025-09-10";
     s.decided_at = "2025-09-09";
     const res = await importDatabase({ data: dump });

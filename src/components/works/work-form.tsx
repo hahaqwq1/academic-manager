@@ -25,6 +25,7 @@ import {
 } from "@/lib/constants";
 import type { WorkInput } from "@/lib/validations";
 import type { WorkActionState } from "@/lib/actions/works";
+import { importFromDoi } from "@/lib/actions/crossref";
 import type { Tag, Work } from "@/db/schema";
 import { cn } from "@/lib/utils";
 
@@ -78,9 +79,7 @@ export function WorkForm({
   cancelHref = "/works",
 }: WorkFormProps) {
   // 受控字段状态。可空文本以空串承载(提交时由 server 端 schema 归一为 null)。
-  const [type, setType] = useState<WorkType>(
-    defaultValues?.type ?? "paper",
-  );
+  const [type, setType] = useState<WorkType>(defaultValues?.type ?? "paper");
   const [title, setTitle] = useState<string>(defaultValues?.title ?? "");
   const [status, setStatus] = useState<WorkStatus>(
     defaultValues?.status ?? "构思",
@@ -101,12 +100,35 @@ export function WorkForm({
   const [publishedAt, setPublishedAt] = useState<string>(
     defaultValues?.published_at ?? "",
   );
+  const [journal, setJournal] = useState<string>(defaultValues?.journal ?? "");
+  const [doi, setDoi] = useState<string>(defaultValues?.doi ?? "");
+  const [doiQuery, setDoiQuery] = useState<string>("");
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>(
     defaultValues?.tagIds ?? [],
   );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
+  const [isImporting, startImport] = useTransition();
+
+  // 从 DOI 拉取元数据并预填(联网 Crossref;失败仅提示,不影响手填)。
+  const handleDoiImport = () => {
+    startImport(async () => {
+      const res = await importFromDoi(doiQuery);
+      if (!res.ok || !res.data) {
+        toast.error(res.message ?? "导入失败,请手动填写");
+        return;
+      }
+      const d = res.data;
+      setTitle(d.title);
+      if (d.authors) setAuthors(d.authors);
+      if (d.journal) setJournal(d.journal);
+      if (d.published_at) setPublishedAt(d.published_at);
+      setType(d.type);
+      setDoi(d.doi);
+      toast.success("已从 Crossref 填充,请核对后保存");
+    });
+  };
 
   // 切换标签选中态。
   const toggleTag = (id: number) => {
@@ -136,6 +158,8 @@ export function WorkForm({
       notes: notes === "" ? null : notes,
       file_path: filePath === "" ? null : filePath,
       published_at: publishedAt === "" ? null : publishedAt,
+      doi: doi === "" ? null : doi,
+      journal: journal === "" ? null : journal,
       tagIds: selectedTagIds,
     };
 
@@ -153,15 +177,34 @@ export function WorkForm({
     <form onSubmit={handleSubmit} noValidate>
       <Card>
         <CardContent className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          {/* 从 DOI 导入(联网 Crossref;失败仅提示,不影响手填) */}
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="work-doi-import">从 DOI 导入</Label>
+            <div className="flex gap-2">
+              <Input
+                id="work-doi-import"
+                value={doiQuery}
+                onChange={(e) => setDoiQuery(e.target.value)}
+                placeholder="粘贴 DOI(如 10.1016/j.xxx),自动填充标题/作者/期刊/年份"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="shrink-0"
+                disabled={isImporting || doiQuery.trim() === ""}
+                onClick={handleDoiImport}
+              >
+                {isImporting ? "导入中…" : "导入"}
+              </Button>
+            </div>
+          </div>
+
           {/* 类型(必填) */}
           <div className="space-y-2">
             <Label htmlFor="work-type">
               类型 <RequiredMark />
             </Label>
-            <Select
-              value={type}
-              onValueChange={(v) => setType(v as WorkType)}
-            >
+            <Select value={type} onValueChange={(v) => setType(v as WorkType)}>
               <SelectTrigger
                 id="work-type"
                 className="w-full"
@@ -194,7 +237,9 @@ export function WorkForm({
                 id="work-status"
                 className="w-full"
                 aria-invalid={errors.status ? true : undefined}
-                aria-describedby={errors.status ? "work-status-error" : undefined}
+                aria-describedby={
+                  errors.status ? "work-status-error" : undefined
+                }
               >
                 <SelectValue placeholder="选择状态" />
               </SelectTrigger>
@@ -234,7 +279,9 @@ export function WorkForm({
               onChange={(e) => setAuthors(e.target.value)}
               placeholder="如:张三, 李四"
               aria-invalid={errors.authors ? true : undefined}
-              aria-describedby={errors.authors ? "work-authors-error" : undefined}
+              aria-describedby={
+                errors.authors ? "work-authors-error" : undefined
+              }
             />
             <FieldError id="work-authors-error" message={errors.authors} />
           </div>
@@ -291,7 +338,10 @@ export function WorkForm({
                 errors.word_count ? "work-word-count-error" : undefined
               }
             />
-            <FieldError id="work-word-count-error" message={errors.word_count} />
+            <FieldError
+              id="work-word-count-error"
+              message={errors.word_count}
+            />
           </div>
 
           {/* 发表日期 */}
@@ -311,6 +361,36 @@ export function WorkForm({
               id="work-published-at-error"
               message={errors.published_at}
             />
+          </div>
+
+          {/* 发表期刊 */}
+          <div className="space-y-2">
+            <Label htmlFor="work-journal">发表期刊</Label>
+            <Input
+              id="work-journal"
+              value={journal}
+              onChange={(e) => setJournal(e.target.value)}
+              placeholder="如:民族研究"
+              aria-invalid={errors.journal ? true : undefined}
+              aria-describedby={
+                errors.journal ? "work-journal-error" : undefined
+              }
+            />
+            <FieldError id="work-journal-error" message={errors.journal} />
+          </div>
+
+          {/* DOI */}
+          <div className="space-y-2">
+            <Label htmlFor="work-doi">DOI</Label>
+            <Input
+              id="work-doi"
+              value={doi}
+              onChange={(e) => setDoi(e.target.value)}
+              placeholder="如:10.1016/j.xxx.2024.01.001"
+              aria-invalid={errors.doi ? true : undefined}
+              aria-describedby={errors.doi ? "work-doi-error" : undefined}
+            />
+            <FieldError id="work-doi-error" message={errors.doi} />
           </div>
 
           {/* 文件路径(占满整行) */}
@@ -339,7 +419,9 @@ export function WorkForm({
               placeholder="作品摘要"
               className="min-h-24"
               aria-invalid={errors.summary ? true : undefined}
-              aria-describedby={errors.summary ? "work-summary-error" : undefined}
+              aria-describedby={
+                errors.summary ? "work-summary-error" : undefined
+              }
             />
             <FieldError id="work-summary-error" message={errors.summary} />
           </div>

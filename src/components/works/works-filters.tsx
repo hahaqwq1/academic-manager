@@ -31,7 +31,10 @@ export function WorksFilters({ allTags }: WorksFiltersProps) {
       ariaLabel: "按状态筛选",
       placeholder: "状态",
       allLabel: "全部状态",
-      options: WORK_STATUSES.map((status) => ({ value: status, label: status })),
+      options: WORK_STATUSES.map((status) => ({
+        value: status,
+        label: status,
+      })),
     },
     // 标签下拉:始终声明(无标签时 options 为空,EntityFilters 自动不渲染,
     // 但 paramKey 仍计入 hasFilters,使陈旧 ?tag=N 也能触发「清除筛选」)。
@@ -41,15 +44,23 @@ export function WorksFilters({ allTags }: WorksFiltersProps) {
       placeholder: "标签",
       allLabel: "全部标签",
       triggerWidth: "sm:w-36",
-      options: allTags.map((tag) => ({ value: String(tag.id), label: tag.name })),
+      options: allTags.map((tag) => ({
+        value: String(tag.id),
+        label: tag.name,
+      })),
     },
   ];
 
   return (
     <EntityFilters
-      searchPlaceholder="搜索标题或摘要…"
+      searchPlaceholder="搜索标题 / 摘要 / 作者 / 备注…"
       searchAriaLabel="搜索作品"
       selects={selects}
+      dateRange={{
+        fromKey: "from",
+        toKey: "to",
+        labels: ["发表起始日期", "发表结束日期"],
+      }}
     />
   );
 }

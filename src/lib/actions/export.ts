@@ -32,8 +32,18 @@ import {
   projectStatusSchema,
   submissionStatusSchema,
   entityTypeSchema,
+  currencySchema,
 } from "@/lib/constants";
-import { isRealCalendarDate } from "@/lib/validations";
+import {
+  DATE_FORMAT_REGEX,
+  DATE_FORMAT_MESSAGE,
+  DATE_INVALID_MESSAGE,
+  isRealCalendarDate,
+  isProjectDateOrderValid,
+  projectDateOrderRefineParams,
+  isSubmissionDateOrderValid,
+  submissionDateOrderRefineParams,
+} from "@/lib/date-rules";
 
 // --- 字段级校验件 ---
 // 主键 / 外键 id:autoIncrement 主键契约为 ≥1,拒 0 与负数。
@@ -42,8 +52,8 @@ const nullableText = z.string().nullable();
 // 真实日历日(YYYY-MM-DD);可空版用于 published_at / start_date / end_date / decided_at。
 const calendarDate = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "日期格式应为 YYYY-MM-DD")
-  .refine(isRealCalendarDate, "日期无效,请检查月份与日期");
+  .regex(DATE_FORMAT_REGEX, DATE_FORMAT_MESSAGE)
+  .refine(isRealCalendarDate, DATE_INVALID_MESSAGE);
 const nullableCalendarDate = calendarDate.nullable();
 // 时间戳(created_at / updated_at):须为可被解析的 ISO8601,拒空串/纯空白/乱码,
 // 否则会污染列表排序(字典序)与日期展示(Date.parse → NaN)。
@@ -51,7 +61,7 @@ const isoTimestamp = z
   .string()
   .refine(
     (v) => v.trim() !== "" && !Number.isNaN(Date.parse(v)),
-    "时间戳须为合法 ISO8601 日期时间"
+    "时间戳须为合法 ISO8601 日期时间",
   );
 
 // --- 各表行 schema(与 src/db/schema.ts 对齐,含 id 与时间戳以便原样恢复)---
@@ -67,6 +77,9 @@ const workRow = z.object({
   notes: nullableText,
   file_path: nullableText,
   published_at: nullableCalendarDate,
+  // 升级线新增列;.optional() 兼容旧备份(无此键时由列默认/NULL 补)。
+  doi: nullableText.optional(),
+  journal: nullableText.optional(),
   created_at: isoTimestamp,
   updated_at: isoTimestamp,
 });
@@ -79,6 +92,13 @@ const projectRow = z
     role: projectRoleSchema,
     grant_no: nullableText,
     funding: nullableText,
+    // 升级线新增结构化经费;.optional() 兼容旧备份。
+    funding_amount: z
+      .number()
+      .min(0, "经费金额不能为负数")
+      .nullable()
+      .optional(),
+    funding_currency: currencySchema.nullable().optional(),
     status: projectStatusSchema,
     start_date: nullableCalendarDate,
     end_date: nullableCalendarDate,
@@ -86,11 +106,9 @@ const projectRow = z
     created_at: isoTimestamp,
     updated_at: isoTimestamp,
   })
-  // 跨字段日期校验:与表单 projectInputSchema 同源,坏备份(end<start)在清库前就被拦。
-  .refine((v) => !(v.start_date && v.end_date) || v.end_date >= v.start_date, {
-    path: ["end_date"],
-    message: "结束日期不能早于开始日期",
-  });
+  // 跨字段日期校验:规则 + 文案 + 挂载字段与表单 projectInputSchema 同源(@/lib/date-rules),
+  // 坏备份(end<start)在清库前就被拦。
+  .refine(isProjectDateOrderValid, projectDateOrderRefineParams);
 
 const submissionRow = z
   .object({
@@ -103,11 +121,8 @@ const submissionRow = z
     decided_at: nullableCalendarDate,
     review_notes: nullableText,
   })
-  // 跨字段日期校验:与表单 submissionInputSchema 同源(decided>=submitted)。
-  .refine((v) => !v.decided_at || v.decided_at >= v.submitted_at, {
-    path: ["decided_at"],
-    message: "决定日期不能早于投稿日期",
-  });
+  // 跨字段日期校验:规则 + 文案与表单 submissionInputSchema 同源(@/lib/date-rules,decided>=submitted)。
+  .refine(isSubmissionDateOrderValid, submissionDateOrderRefineParams);
 
 const tagRow = z.object({
   id: intId,
@@ -157,7 +172,7 @@ export interface ImportResult {
 function firstDuplicate<T>(
   rows: T[],
   keyOf: (row: T) => string | number,
-  label: string
+  label: string,
 ): string | null {
   const seen = new Set<string | number>();
   for (const row of rows) {
@@ -182,17 +197,17 @@ function checkIntegrity(data: Dump): string | null {
     firstDuplicate(
       data.submissions,
       (r) => `${r.work_id}#${r.round}`,
-      "submissions(work_id,round)"
+      "submissions(work_id,round)",
     ) ??
     firstDuplicate(
       data.entity_tags,
       (r) => `${r.entity_type}#${r.entity_id}#${r.tag_id}`,
-      "entity_tags 唯一组合"
+      "entity_tags 唯一组合",
     ) ??
     firstDuplicate(
       data.project_outputs,
       (r) => `${r.project_id}#${r.work_id}`,
-      "project_outputs 唯一组合"
+      "project_outputs 唯一组合",
     );
   if (dupErr) return dupErr;
 
@@ -201,10 +216,12 @@ function checkIntegrity(data: Dump): string | null {
   const tagIds = new Set(data.tags.map((t) => t.id));
 
   for (const s of data.submissions) {
-    if (!workIds.has(s.work_id)) return `submissions.work_id=${s.work_id} 无对应作品`;
+    if (!workIds.has(s.work_id))
+      return `submissions.work_id=${s.work_id} 无对应作品`;
   }
   for (const e of data.entity_tags) {
-    if (!tagIds.has(e.tag_id)) return `entity_tags.tag_id=${e.tag_id} 无对应标签`;
+    if (!tagIds.has(e.tag_id))
+      return `entity_tags.tag_id=${e.tag_id} 无对应标签`;
     // entity_id 是多态引用(work | project),SQLite 无外键约束,必须在此手动校验。
     const pool = e.entity_type === "work" ? workIds : projectIds;
     if (!pool.has(e.entity_id)) {
@@ -281,7 +298,14 @@ export async function importDatabase(input: unknown): Promise<ImportResult> {
 
   // 数据已提交。缓存刷新失败不应让已成功的恢复被误报为失败。
   try {
-    for (const path of ["/", "/works", "/projects", "/submissions", "/tags", "/export"]) {
+    for (const path of [
+      "/",
+      "/works",
+      "/projects",
+      "/submissions",
+      "/tags",
+      "/export",
+    ]) {
       revalidatePath(path);
     }
   } catch (error) {

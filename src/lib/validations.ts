@@ -19,16 +19,22 @@ import {
   projectRoleSchema,
   projectStatusSchema,
   submissionStatusSchema,
+  currencySchema,
 } from "@/lib/constants";
-import { parseDateOnly } from "@/lib/format";
+import {
+  DATE_FORMAT_REGEX,
+  DATE_FORMAT_MESSAGE,
+  DATE_INVALID_MESSAGE,
+  isRealCalendarDate,
+  isProjectDateOrderValid,
+  projectDateOrderRefineParams,
+  isSubmissionDateOrderValid,
+  submissionDateOrderRefineParams,
+} from "@/lib/date-rules";
 
-// 校验 "YYYY-MM-DD" 是真实日历日:排除 2024-02-30 / 2024-13-01 等。
-// 判定逻辑唯一真源是 format.ts 的 parseDateOnly(回填核对真实日历日),此处仅委托,
-// 避免「格式正则 + 回填核对」在 format / validations / export 三处各写一份而漂移。
-// 导出/恢复(P2-8 importDatabase)也复用此校验拦截非法日期。
-export function isRealCalendarDate(value: string): boolean {
-  return parseDateOnly(value) !== null;
-}
+// 日期规则(格式正则、真实日历日校验、跨字段顺序断言)统一搬到 @/lib/date-rules,
+// 由表单与导入恢复共享。此处再导出 isRealCalendarDate 以保持历史导入方(actions/export 等)兼容。
+export { isRealCalendarDate };
 
 // 把「空串 / 仅空白 / null / undefined」统一归一化为 null,其余 trim 后保留。
 // 用于可空自由文本字段(authors / summary / notes / file_path 等)。
@@ -57,7 +63,7 @@ function nullableTrimmedStringMax(max: number, message: string) {
 // 标题:必填,trim 后非空,否则报「请输入标题」。
 const titleString = z.preprocess(
   (value) => (typeof value === "string" ? value.trim() : value),
-  z.string().min(1, "请输入标题")
+  z.string().min(1, "请输入标题"),
 );
 
 // 字数:可空非负整数。空串 / null / undefined → null;其余 coerce 为整数并校验 >= 0。
@@ -75,7 +81,7 @@ const nullableDateString = z.preprocess((value) => {
     return trimmed === "" ? null : trimmed;
   }
   return value;
-}, z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "日期格式应为 YYYY-MM-DD").refine(isRealCalendarDate, "日期无效,请检查月份与日期").nullable());
+}, z.string().regex(DATE_FORMAT_REGEX, DATE_FORMAT_MESSAGE).refine(isRealCalendarDate, DATE_INVALID_MESSAGE).nullable());
 
 // 署名角色:可空枚举。空串 / null → null;否则按 authorRoleSchema 校验。
 const nullableAuthorRole = z.preprocess((value) => {
@@ -83,6 +89,20 @@ const nullableAuthorRole = z.preprocess((value) => {
   if (typeof value === "string" && value.trim() === "") return null;
   return value;
 }, authorRoleSchema.nullable());
+
+// 非负金额(real):空 / null → null;否则 coerce 为数字并校验 >= 0(允许小数,如 12.5 万元)。
+const nullableNonNegativeNumber = z.preprocess((value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string" && value.trim() === "") return null;
+  return value;
+}, z.coerce.number().min(0, "经费金额不能为负数").nullable());
+
+// 经费币种:空 → 默认「元」;否则按白名单校验。
+const fundingCurrencyField = z.preprocess((value) => {
+  if (value === null || value === undefined) return "元";
+  if (typeof value === "string" && value.trim() === "") return "元";
+  return value;
+}, currencySchema);
 
 // ---------------------------------------------------------------------------
 // 作品输入契约 —— Phase 2:client 表单与 server action 共用。
@@ -98,6 +118,8 @@ export const workInputSchema = z.object({
   notes: nullableTrimmedStringMax(5000, "备注不超过 5000 字"),
   file_path: nullableTrimmedStringMax(500, "文件路径不超过 500 字符"),
   published_at: nullableDateString,
+  doi: nullableTrimmedStringMax(255, "DOI 不超过 255 字符"),
+  journal: nullableTrimmedStringMax(255, "期刊名不超过 255 字符"),
   tagIds: z.array(z.number()).default([]),
 });
 
@@ -115,17 +137,16 @@ export const projectInputSchema = z
     status: projectStatusSchema,
     grant_no: nullableTrimmedString,
     funding: nullableTrimmedString,
+    funding_amount: nullableNonNegativeNumber,
+    funding_currency: fundingCurrencyField,
     start_date: nullableDateString,
     end_date: nullableDateString,
     notes: nullableTrimmedStringMax(5000, "备注不超过 5000 字"),
     tagIds: z.array(z.number()).default([]),
   })
-  // 跨字段:仅当起止日期都填了才校验;日期已是合法 YYYY-MM-DD,字典序即时间序,可直接比较。
+  // 跨字段:仅当起止日期都填了才校验(规则 + 文案 + 挂载字段统一来自 date-rules,与导入恢复同源)。
   // 错误挂在 end_date 上,表单在结束日期字段下行内显示。
-  .refine((v) => !(v.start_date && v.end_date) || v.end_date >= v.start_date, {
-    path: ["end_date"],
-    message: "结束日期不能早于开始日期",
-  });
+  .refine(isProjectDateOrderValid, projectDateOrderRefineParams);
 
 export type ProjectInput = z.infer<typeof projectInputSchema>;
 
@@ -137,20 +158,24 @@ export type ProjectInput = z.infer<typeof projectInputSchema>;
 // ---------------------------------------------------------------------------
 const journalString = z.preprocess(
   (value) => (typeof value === "string" ? value.trim() : value),
-  z.string().min(1, "请输入期刊 / 投稿目标")
+  z.string().min(1, "请输入期刊 / 投稿目标"),
 );
 
-const positiveRound = z.preprocess((value) => {
-  if (value === null || value === undefined) return value;
-  if (typeof value === "string" && value.trim() === "") return value;
-  return value;
-}, z.coerce.number().int("轮次必须为整数").min(1, "轮次至少为 1"));
+const positiveRound = z.preprocess(
+  (value) => {
+    if (value === null || value === undefined) return value;
+    if (typeof value === "string" && value.trim() === "") return value;
+    return value;
+  },
+  z.coerce.number().int("轮次必须为整数").min(1, "轮次至少为 1"),
+);
 
 const requiredDateString = z.preprocess(
   (value) => (typeof value === "string" ? value.trim() : value),
-  z.string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "日期格式应为 YYYY-MM-DD")
-    .refine(isRealCalendarDate, "日期无效,请检查月份与日期")
+  z
+    .string()
+    .regex(DATE_FORMAT_REGEX, DATE_FORMAT_MESSAGE)
+    .refine(isRealCalendarDate, DATE_INVALID_MESSAGE),
 );
 
 export const submissionInputSchema = z
@@ -162,10 +187,7 @@ export const submissionInputSchema = z
     decided_at: nullableDateString,
     review_notes: nullableTrimmedString,
   })
-  // 跨字段:决定日期填了才校验,且不得早于投稿日期。错误挂在 decided_at 上。
-  .refine((v) => !v.decided_at || v.decided_at >= v.submitted_at, {
-    path: ["decided_at"],
-    message: "决定日期不能早于投稿日期",
-  });
+  // 跨字段:决定日期填了才校验,且不得早于投稿日期(规则 + 文案统一来自 date-rules,与导入恢复同源)。
+  .refine(isSubmissionDateOrderValid, submissionDateOrderRefineParams);
 
 export type SubmissionInput = z.infer<typeof submissionInputSchema>;

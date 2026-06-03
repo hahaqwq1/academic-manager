@@ -55,7 +55,9 @@ describe("listWorks", () => {
     makeWork(ctx.db, { type: "commentary", status: "已发表" });
     expect((await listWorks({ type: "paper" })).total).toBe(2);
     expect((await listWorks({ status: "已发表" })).total).toBe(2);
-    expect((await listWorks({ type: "paper", status: "已发表" })).total).toBe(1);
+    expect((await listWorks({ type: "paper", status: "已发表" })).total).toBe(
+      1,
+    );
   });
 
   it("搜索:命中 title 或 summary;空/纯空白 q 被忽略", async () => {
@@ -65,6 +67,34 @@ describe("listWorks", () => {
     expect((await listWorks({ q: "learning" })).total).toBe(2); // LIKE 对 ASCII 大小写不敏感
     expect((await listWorks({ q: "" })).total).toBe(3);
     expect((await listWorks({ q: "   " })).total).toBe(3);
+  });
+
+  it("搜索:命中 authors / notes(全文检索扩展到全文本字段)", async () => {
+    makeWork(ctx.db, { title: "甲", authors: "张三, 李四" });
+    makeWork(ctx.db, { title: "乙", notes: "见李四的审稿批注" });
+    makeWork(ctx.db, { title: "丙", summary: "无关" });
+    const r = await listWorks({ q: "李四" });
+    expect(r.items.map((w) => w.title).sort()).toEqual(["乙", "甲"]);
+  });
+
+  it("发表日期区间 from/to;NULL published_at 在设区间时被排除", async () => {
+    makeWork(ctx.db, { title: "2023", published_at: "2023-06-01" });
+    makeWork(ctx.db, { title: "2024", published_at: "2024-06-01" });
+    makeWork(ctx.db, { title: "2025", published_at: "2025-06-01" });
+    makeWork(ctx.db, { title: "无日期", published_at: null });
+    expect(
+      (await listWorks({ from: "2024-01-01" })).items
+        .map((w) => w.title)
+        .sort(),
+    ).toEqual(["2024", "2025"]);
+    expect(
+      (await listWorks({ to: "2024-12-31" })).items.map((w) => w.title).sort(),
+    ).toEqual(["2023", "2024"]);
+    expect(
+      (await listWorks({ from: "2024-01-01", to: "2024-12-31" })).items.map(
+        (w) => w.title,
+      ),
+    ).toEqual(["2024"]);
   });
 
   it("LIKE 通配符按字面量转义(0-2):% / _ / \\ 不再当通配符", async () => {
@@ -82,9 +112,9 @@ describe("listWorks", () => {
       "第1_2章",
     ]);
     // 反斜杠不破坏查询,按字面量匹配
-    expect((await listWorks({ q: "C\\盘" })).items.map((w) => w.title)).toEqual([
-      "路径C\\盘",
-    ]);
+    expect((await listWorks({ q: "C\\盘" })).items.map((w) => w.title)).toEqual(
+      ["路径C\\盘"],
+    );
     // 裸 % 不再匹配全部:只命中标题里真含 "%" 的那一条
     expect((await listWorks({ q: "%" })).items.map((w) => w.title)).toEqual([
       "降价50%促销",
@@ -110,7 +140,7 @@ describe("listWorks", () => {
     tagEntity(ctx.db, "work", w2.id, tag.id);
     const r = await listWorks({ status: "已发表", tagId: tag.id });
     expect(r.total).toBe(1);
-    expect(r.items[0].id).toBe(w1.id);
+    expect(r.items[0]!.id).toBe(w1.id);
   });
 
   it("按 updated_at 倒序", async () => {
@@ -130,13 +160,16 @@ describe("listWorks", () => {
     // 同 id 的 project 标签必须被排除。
     tagEntity(ctx.db, "project", w.id, t1.id);
     const r = await listWorks();
-    expect(r.items[0].tags.map((t) => t.name).sort()).toEqual(["标签1", "标签2"]);
+    expect(r.items[0]!.tags.map((t) => t.name).sort()).toEqual([
+      "标签1",
+      "标签2",
+    ]);
   });
 
   it("无标签作品 tags 为 []", async () => {
     makeWork(ctx.db, { title: "A" });
     const r = await listWorks();
-    expect(r.items[0].tags).toEqual([]);
+    expect(r.items[0]!.tags).toEqual([]);
   });
 });
 
@@ -161,8 +194,8 @@ describe("listWorksMinimal", () => {
     makeWork(ctx.db, { title: "新", updated_at: "2025-09-01T00:00:00.000Z" });
     const list = await listWorksMinimal();
     expect(list.map((w) => w.title)).toEqual(["新", "旧"]);
-    expect(Object.keys(list[0]).sort()).toEqual(
-      ["id", "published_at", "status", "title", "type"].sort()
+    expect(Object.keys(list[0]!).sort()).toEqual(
+      ["id", "published_at", "status", "title", "type"].sort(),
     );
   });
 });

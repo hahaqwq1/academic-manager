@@ -14,9 +14,11 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 import {
+  CURRENCIES,
   PROJECT_LEVELS,
   PROJECT_ROLES,
   PROJECT_STATUSES,
+  type Currency,
   type ProjectLevel,
   type ProjectRole,
   type ProjectStatus,
@@ -72,14 +74,20 @@ export function ProjectForm({
   const [level, setLevel] = useState<ProjectLevel>(
     defaultValues?.level ?? "校级",
   );
-  const [role, setRole] = useState<ProjectRole>(
-    defaultValues?.role ?? "主持",
-  );
+  const [role, setRole] = useState<ProjectRole>(defaultValues?.role ?? "主持");
   const [status, setStatus] = useState<ProjectStatus>(
     defaultValues?.status ?? "拟申报",
   );
   const [grantNo, setGrantNo] = useState<string>(defaultValues?.grant_no ?? "");
   const [funding, setFunding] = useState<string>(defaultValues?.funding ?? "");
+  const [fundingAmount, setFundingAmount] = useState<string>(
+    defaultValues?.funding_amount != null
+      ? String(defaultValues.funding_amount)
+      : "",
+  );
+  const [fundingCurrency, setFundingCurrency] = useState<Currency>(
+    defaultValues?.funding_currency ?? "万元",
+  );
   const [startDate, setStartDate] = useState<string>(
     defaultValues?.start_date ?? "",
   );
@@ -107,6 +115,11 @@ export function ProjectForm({
       status,
       grant_no: grantNo === "" ? null : grantNo,
       funding: funding === "" ? null : funding,
+      funding_amount:
+        fundingAmount.trim() === "" || Number.isNaN(Number(fundingAmount))
+          ? null
+          : Number(fundingAmount),
+      funding_currency: fundingCurrency,
       start_date: startDate === "" ? null : startDate,
       end_date: endDate === "" ? null : endDate,
       notes: notes === "" ? null : notes,
@@ -137,7 +150,9 @@ export function ProjectForm({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="项目 / 课题名称"
               aria-invalid={errors.title ? true : undefined}
-              aria-describedby={errors.title ? "project-title-error" : undefined}
+              aria-describedby={
+                errors.title ? "project-title-error" : undefined
+              }
             />
             <FieldError id="project-title-error" message={errors.title} />
           </div>
@@ -147,7 +162,10 @@ export function ProjectForm({
             <Label htmlFor="project-level">
               级别 <RequiredMark />
             </Label>
-            <Select value={level} onValueChange={(v) => setLevel(v as ProjectLevel)}>
+            <Select
+              value={level}
+              onValueChange={(v) => setLevel(v as ProjectLevel)}
+            >
               <SelectTrigger id="project-level" className="w-full">
                 <SelectValue placeholder="选择级别" />
               </SelectTrigger>
@@ -167,7 +185,10 @@ export function ProjectForm({
             <Label htmlFor="project-role">
               角色 <RequiredMark />
             </Label>
-            <Select value={role} onValueChange={(v) => setRole(v as ProjectRole)}>
+            <Select
+              value={role}
+              onValueChange={(v) => setRole(v as ProjectRole)}
+            >
               <SelectTrigger id="project-role" className="w-full">
                 <SelectValue placeholder="选择角色" />
               </SelectTrigger>
@@ -217,16 +238,57 @@ export function ProjectForm({
             <FieldError id="project-grant-no-error" message={errors.grant_no} />
           </div>
 
-          {/* 经费 */}
+          {/* 经费(文本,遗留 / 备注) */}
           <div className="space-y-2">
-            <Label htmlFor="project-funding">经费</Label>
+            <Label htmlFor="project-funding">经费(文本)</Label>
             <Input
               id="project-funding"
               value={funding}
               onChange={(e) => setFunding(e.target.value)}
-              placeholder="如:20万元"
+              placeholder="如:20万元(自由文本,仅展示)"
             />
             <FieldError id="project-funding-error" message={errors.funding} />
+          </div>
+
+          {/* 经费金额 + 币种(结构化,供仪表盘汇总) */}
+          <div className="space-y-2">
+            <Label htmlFor="project-funding-amount">经费金额</Label>
+            <div className="flex gap-2">
+              <Input
+                id="project-funding-amount"
+                type="number"
+                min={0}
+                step="0.01"
+                value={fundingAmount}
+                onChange={(e) => setFundingAmount(e.target.value)}
+                placeholder="如:20"
+                aria-invalid={errors.funding_amount ? true : undefined}
+                aria-describedby={
+                  errors.funding_amount
+                    ? "project-funding-amount-error"
+                    : undefined
+                }
+              />
+              <Select
+                value={fundingCurrency}
+                onValueChange={(v) => setFundingCurrency(v as Currency)}
+              >
+                <SelectTrigger className="w-24 shrink-0" aria-label="经费币种">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <FieldError
+              id="project-funding-amount-error"
+              message={errors.funding_amount}
+            />
           </div>
 
           {/* 起始日期 */}
@@ -239,7 +301,10 @@ export function ProjectForm({
               onChange={(e) => setStartDate(e.target.value)}
               aria-invalid={errors.start_date ? true : undefined}
             />
-            <FieldError id="project-start-date-error" message={errors.start_date} />
+            <FieldError
+              id="project-start-date-error"
+              message={errors.start_date}
+            />
           </div>
 
           {/* 结束日期 */}

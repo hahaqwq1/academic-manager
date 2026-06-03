@@ -19,6 +19,7 @@ import { WorksFilters } from "@/components/works/works-filters";
 import { WorksList } from "@/components/works/works-list";
 import { listWorks } from "@/db/queries/works";
 import { listAllTags } from "@/db/queries/tags";
+import { DATE_FORMAT_REGEX, isRealCalendarDate } from "@/lib/date-rules";
 import {
   WORK_STATUSES,
   WORK_TYPES,
@@ -34,6 +35,8 @@ interface WorksPageProps {
     type?: string;
     status?: string;
     tag?: string;
+    from?: string;
+    to?: string;
     page?: string;
   }>;
 }
@@ -59,6 +62,13 @@ function parsePositiveInt(value: string | undefined): number | undefined {
   return Number.isInteger(n) && n > 0 ? n : undefined;
 }
 
+// 把任意字符串收窄为合法日历日(YYYY-MM-DD),否则 undefined(脏参忽略)。
+function parseDate(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const v = value.trim();
+  return DATE_FORMAT_REGEX.test(v) && isRealCalendarDate(v) ? v : undefined;
+}
+
 export default async function WorksPage({ searchParams }: WorksPageProps) {
   const sp = await searchParams;
 
@@ -66,10 +76,12 @@ export default async function WorksPage({ searchParams }: WorksPageProps) {
   const type = parseType(sp.type);
   const status = parseStatus(sp.status);
   const tagId = parsePositiveInt(sp.tag);
+  const from = parseDate(sp.from);
+  const to = parseDate(sp.to);
   const page = parsePositiveInt(sp.page) ?? 1;
 
   const [result, allTags] = await Promise.all([
-    listWorks({ q, type, status, tagId, page }),
+    listWorks({ q, type, status, tagId, from, to, page }),
     listAllTags(),
   ]);
 
@@ -78,7 +90,9 @@ export default async function WorksPage({ searchParams }: WorksPageProps) {
     q !== undefined ||
     type !== undefined ||
     status !== undefined ||
-    tagId !== undefined;
+    tagId !== undefined ||
+    from !== undefined ||
+    to !== undefined;
 
   // 分页:基于当前 query 生成「上一页 / 下一页」链接(保留其它筛选参数)。
   const buildPageHref = (targetPage: number) => {
@@ -87,6 +101,8 @@ export default async function WorksPage({ searchParams }: WorksPageProps) {
     if (type) params.set("type", type);
     if (status) params.set("status", status);
     if (tagId !== undefined) params.set("tag", String(tagId));
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
     if (targetPage > 1) params.set("page", String(targetPage));
     const queryString = params.toString();
     return queryString ? `/works?${queryString}` : "/works";

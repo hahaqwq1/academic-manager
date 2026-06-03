@@ -19,10 +19,7 @@ import {
   DetailField as Field,
   DetailBlockField as BlockField,
 } from "@/components/common/detail-fields";
-import {
-  WorkStatusBadge,
-  WorkTypeBadge,
-} from "@/components/works/work-badges";
+import { WorkStatusBadge, WorkTypeBadge } from "@/components/works/work-badges";
 import { DeleteWorkButton } from "@/components/works/delete-work-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,13 +92,40 @@ export default async function WorkDetailPage({
             />
             <Field
               label="字数"
-              value={work.word_count != null ? work.word_count.toLocaleString("zh-CN") : EMPTY}
+              value={
+                work.word_count != null
+                  ? work.word_count.toLocaleString("zh-CN")
+                  : EMPTY
+              }
               empty={work.word_count == null}
             />
             <Field
               label="发表日期"
               value={formatDate(work.published_at)}
               empty={!work.published_at}
+            />
+            <Field
+              label="发表期刊"
+              value={display(work.journal)}
+              empty={display(work.journal) === EMPTY}
+            />
+            <Field
+              label="DOI"
+              value={
+                work.doi && work.doi.trim() !== "" ? (
+                  <a
+                    href={`https://doi.org/${work.doi.trim()}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-all font-mono text-xs text-primary hover:underline"
+                  >
+                    {work.doi.trim()}
+                  </a>
+                ) : (
+                  EMPTY
+                )
+              }
+              empty={!work.doi || work.doi.trim() === ""}
             />
             <Field
               label="文件路径"
@@ -144,7 +168,10 @@ export default async function WorkDetailPage({
 
           {/* 投稿记录管理(Phase 4) */}
           <div className="py-2">
-            <WorkSubmissionsManager workId={work.id} submissions={submissions} />
+            <WorkSubmissionsManager
+              workId={work.id}
+              submissions={submissions}
+            />
           </div>
 
           <Separator className="my-2" />

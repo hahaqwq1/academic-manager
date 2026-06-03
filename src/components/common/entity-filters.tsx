@@ -33,16 +33,25 @@ export interface FilterSelectConfig {
   triggerWidth?: string; // 触发器宽度 class,默认 sm:w-32
 }
 
+// 可选的日期区间筛选(两个 date 输入,写入 fromKey / toKey 两个 query 参数)。
+export interface DateRangeConfig {
+  fromKey: string;
+  toKey: string;
+  labels: [string, string]; // [起始 aria-label, 结束 aria-label]
+}
+
 export interface EntityFiltersProps {
   searchPlaceholder: string;
   searchAriaLabel: string;
   selects: FilterSelectConfig[];
+  dateRange?: DateRangeConfig;
 }
 
 export function EntityFilters({
   searchPlaceholder,
   searchAriaLabel,
   selects,
+  dateRange,
 }: EntityFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -79,7 +88,7 @@ export function EntityFilters({
       const queryString = params.toString();
       return queryString ? `${pathname}?${queryString}` : pathname;
     },
-    [pathname, searchParams]
+    [pathname, searchParams],
   );
 
   // 立即更新某个参数到 URL。
@@ -87,7 +96,7 @@ export function EntityFilters({
     (key: string, value: string | null) => {
       router.replace(buildQuery({ [key]: value }), { scroll: false });
     },
-    [buildQuery, router]
+    [buildQuery, router],
   );
 
   // 搜索框输入:本地受控 + 300ms 防抖后写入 URL。
@@ -127,7 +136,10 @@ export function EntityFilters({
   // URL 上的陈旧 ?tag=N 仍能让「清除筛选」出现,与重构前行为一致。
   const hasFilters =
     currentQ !== "" ||
-    selects.some((s) => (searchParams.get(s.paramKey) ?? "") !== "");
+    selects.some((s) => (searchParams.get(s.paramKey) ?? "") !== "") ||
+    (dateRange !== undefined &&
+      ((searchParams.get(dateRange.fromKey) ?? "") !== "" ||
+        (searchParams.get(dateRange.toKey) ?? "") !== ""));
 
   return (
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -182,6 +194,29 @@ export function EntityFilters({
           </Select>
         );
       })}
+
+      {/* 发表日期区间 */}
+      {dateRange ? (
+        <div className="flex items-center gap-1.5">
+          <Input
+            type="date"
+            aria-label={dateRange.labels[0]}
+            value={searchParams.get(dateRange.fromKey) ?? ""}
+            onChange={(e) =>
+              setParam(dateRange.fromKey, e.target.value || null)
+            }
+            className="w-auto"
+          />
+          <span className="text-xs text-muted-foreground">至</span>
+          <Input
+            type="date"
+            aria-label={dateRange.labels[1]}
+            value={searchParams.get(dateRange.toKey) ?? ""}
+            onChange={(e) => setParam(dateRange.toKey, e.target.value || null)}
+            className="w-auto"
+          />
+        </div>
+      ) : null}
 
       {/* 清除筛选 */}
       {hasFilters ? (

@@ -44,16 +44,57 @@ describe("getAllWorksForExport", () => {
   });
 });
 
+describe("getAllWorksForExport resolvedJournal(期刊兜底)", () => {
+  it("works.journal 存在则直接用", async () => {
+    makeWork(ctx.db, { title: "W", journal: "民族研究" });
+    const [w] = await getAllWorksForExport();
+    expect(w!.resolvedJournal).toBe("民族研究");
+  });
+
+  it("works.journal 缺失则取投稿 journal,录用优先于在审", async () => {
+    const w = makeWork(ctx.db, { title: "W", journal: null });
+    makeSubmission(ctx.db, w.id, {
+      round: 1,
+      journal: "刊A",
+      status: "在审",
+      decided_at: null,
+    });
+    makeSubmission(ctx.db, w.id, {
+      round: 2,
+      journal: "刊B",
+      status: "录用",
+      decided_at: "2024-05-01",
+    });
+    const list = await getAllWorksForExport();
+    expect(list.find((x) => x.id === w.id)!.resolvedJournal).toBe("刊B");
+  });
+
+  it("无 journal 且无投稿 → null", async () => {
+    makeWork(ctx.db, { title: "W", journal: null });
+    const [w] = await getAllWorksForExport();
+    expect(w!.resolvedJournal).toBeNull();
+  });
+});
+
 describe("getProjectsWithOutputs", () => {
   it("每项目嵌套成果,投影为精简字段;一篇作品可挂多个项目", async () => {
-    const p1 = makeProject(ctx.db, { title: "P1", updated_at: "2025-02-01T00:00:00.000Z" });
-    const p2 = makeProject(ctx.db, { title: "P2", updated_at: "2025-01-01T00:00:00.000Z" });
+    const p1 = makeProject(ctx.db, {
+      title: "P1",
+      updated_at: "2025-02-01T00:00:00.000Z",
+    });
+    const p2 = makeProject(ctx.db, {
+      title: "P2",
+      updated_at: "2025-01-01T00:00:00.000Z",
+    });
     const shared = makeWork(ctx.db, {
       title: "共享成果",
       authors: "示例作者",
       published_at: "2025-01-01",
     });
-    const only2 = makeWork(ctx.db, { title: "P2专属", published_at: "2024-01-01" });
+    const only2 = makeWork(ctx.db, {
+      title: "P2专属",
+      published_at: "2024-01-01",
+    });
     linkOutput(ctx.db, p1.id, shared.id);
     linkOutput(ctx.db, p2.id, shared.id);
     linkOutput(ctx.db, p2.id, only2.id);
@@ -61,20 +102,23 @@ describe("getProjectsWithOutputs", () => {
     const list = await getProjectsWithOutputs();
     // 项目按 updated_at 倒序:P1 在前。
     expect(list.map((p) => p.title)).toEqual(["P1", "P2"]);
-    const p1Out = list[0];
+    const p1Out = list[0]!;
     expect(p1Out.outputs.map((o) => o.title)).toEqual(["共享成果"]);
     // 投影只含这些键。
-    expect(Object.keys(p1Out.outputs[0]).sort()).toEqual(
-      ["authors", "published_at", "status", "title", "type"].sort()
+    expect(Object.keys(p1Out.outputs[0]!).sort()).toEqual(
+      ["authors", "published_at", "status", "title", "type"].sort(),
     );
     // P2 含两条,按 works.published_at 倒序(2025 在 2024 前)。
-    expect(list[1].outputs.map((o) => o.title)).toEqual(["共享成果", "P2专属"]);
+    expect(list[1]!.outputs.map((o) => o.title)).toEqual([
+      "共享成果",
+      "P2专属",
+    ]);
   });
 
   it("无成果项目 outputs 为 []", async () => {
     makeProject(ctx.db, { title: "空项目" });
     const list = await getProjectsWithOutputs();
-    expect(list[0].outputs).toEqual([]);
+    expect(list[0]!.outputs).toEqual([]);
   });
 
   it("同发表日期(并列)的成果按 work_id 升序确定排序(P3-10 对抗审查)", async () => {
@@ -86,7 +130,7 @@ describe("getProjectsWithOutputs", () => {
     linkOutput(ctx.db, p.id, w3.id);
     linkOutput(ctx.db, p.id, w1.id);
     linkOutput(ctx.db, p.id, w2.id);
-    const [proj] = await getProjectsWithOutputs();
+    const proj = (await getProjectsWithOutputs())[0]!;
     expect(proj.outputs.map((o) => o.title)).toEqual(["W1", "W2", "W3"]);
   });
 });
@@ -101,7 +145,14 @@ describe("getDatabaseDump", () => {
     linkOutput(ctx.db, p.id, w.id);
     const dump = await getDatabaseDump();
     expect(Object.keys(dump).sort()).toEqual(
-      ["entity_tags", "project_outputs", "projects", "submissions", "tags", "works"].sort()
+      [
+        "entity_tags",
+        "project_outputs",
+        "projects",
+        "submissions",
+        "tags",
+        "works",
+      ].sort(),
     );
     expect(dump.works).toHaveLength(1);
     expect(dump.projects).toHaveLength(1);

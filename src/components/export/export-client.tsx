@@ -28,8 +28,10 @@ import type { Work } from "@/db/schema";
 import type {
   DatabaseDump,
   ProjectWithOutputsExport,
+  WorkForExport,
 } from "@/db/queries/export";
 import { WORK_TYPES, WORK_TYPE_LABELS, type WorkType } from "@/lib/constants";
+import { toAPA, toGB7714, toBibTeX, type CitationWork } from "@/lib/citation";
 
 const NO_YEAR = "未注明年份";
 
@@ -97,7 +99,9 @@ function formatByType(works: Work[], md: boolean): string {
   if (works.length === 0) return "(暂无作品)";
   const grouped = groupBy(works, (w) => w.type);
   const blocks = WORK_TYPES.filter((t) => grouped.has(t)).map((t) => {
-    const heading = md ? `### ${WORK_TYPE_LABELS[t]}` : `【${WORK_TYPE_LABELS[t]}】`;
+    const heading = md
+      ? `### ${WORK_TYPE_LABELS[t]}`
+      : `【${WORK_TYPE_LABELS[t]}】`;
     const lines = grouped
       .get(t)!
       .map((w) => workLine(w, { withYear: true, md }))
@@ -106,6 +110,31 @@ function formatByType(works: Work[], md: boolean): string {
   });
   const title = md ? "# 成果清单(按类型)\n" : "成果清单(按类型)\n";
   return `${title}\n${blocks.join("\n\n")}`;
+}
+
+// 引用清单格式。
+type CiteStyle = "apa" | "gb7714" | "bibtex";
+
+function toCitationWork(w: WorkForExport): CitationWork {
+  return {
+    title: w.title,
+    authors: w.authors,
+    journal: w.resolvedJournal,
+    published_at: w.published_at,
+    doi: w.doi,
+    type: w.type,
+  };
+}
+
+// 引用清单:APA / GB-T 7714 扁平编号;BibTeX 为条目(空行分隔)。
+function formatCitations(works: WorkForExport[], style: CiteStyle): string {
+  if (works.length === 0) return "(暂无作品)";
+  const fmt =
+    style === "apa" ? toAPA : style === "gb7714" ? toGB7714 : toBibTeX;
+  if (style === "bibtex") {
+    return works.map((w) => fmt(toCitationWork(w))).join("\n\n");
+  }
+  return works.map((w, i) => `[${i + 1}] ${fmt(toCitationWork(w))}`).join("\n");
 }
 
 // 项目结题成果列表。
@@ -168,23 +197,27 @@ function CopyButton({ text }: { text: string }) {
 }
 
 interface ExportClientProps {
-  works: Work[];
+  works: WorkForExport[];
   projects: ProjectWithOutputsExport[];
   dump: DatabaseDump;
 }
 
 export function ExportClient({ works, projects, dump }: ExportClientProps) {
   const [groupBy_, setGroupBy] = useState<"year" | "type">("year");
-  const [format, setFormat] = useState<"md" | "text">("md");
+  const [format, setFormat] = useState<"md" | "text" | CiteStyle>("md");
   const md = format === "md";
 
-  const worksText = useMemo(
-    () => (groupBy_ === "year" ? formatByYear(works, md) : formatByType(works, md)),
-    [works, groupBy_, md]
-  );
+  const worksText = useMemo(() => {
+    if (format === "apa" || format === "gb7714" || format === "bibtex") {
+      return formatCitations(works, format);
+    }
+    return groupBy_ === "year"
+      ? formatByYear(works, md)
+      : formatByType(works, md);
+  }, [works, groupBy_, md, format]);
 
   const [projectId, setProjectId] = useState<string | undefined>(
-    projects.length > 0 ? String(projects[0].id) : undefined
+    projects[0] ? String(projects[0].id) : undefined,
   );
   const [projFormat, setProjFormat] = useState<"md" | "text">("md");
   const selectedProject = projects.find((p) => String(p.id) === projectId);
@@ -261,7 +294,7 @@ export function ExportClient({ works, projects, dump }: ExportClientProps) {
     }
     const len = (k: string) => (rec[k] as unknown[]).length;
     const summary = `作品 ${len("works")} · 项目 ${len("projects")} · 投稿 ${len(
-      "submissions"
+      "submissions",
     )} · 标签 ${len("tags")} · 关联 ${len("entity_tags") + len("project_outputs")}`;
     setPendingImport({ fileName: file.name, payload, summary });
   };
@@ -294,7 +327,10 @@ export function ExportClient({ works, projects, dump }: ExportClientProps) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-sm font-semibold text-foreground">成果清单</h3>
             <div className="flex flex-wrap items-center gap-2">
-              <Select value={groupBy_} onValueChange={(v) => setGroupBy(v as "year" | "type")}>
+              <Select
+                value={groupBy_}
+                onValueChange={(v) => setGroupBy(v as "year" | "type")}
+              >
                 <SelectTrigger className="w-32" aria-label="分组方式">
                   <SelectValue />
                 </SelectTrigger>
@@ -303,13 +339,19 @@ export function ExportClient({ works, projects, dump }: ExportClientProps) {
                   <SelectItem value="type">按类型</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={format} onValueChange={(v) => setFormat(v as "md" | "text")}>
+              <Select
+                value={format}
+                onValueChange={(v) => setFormat(v as "md" | "text" | CiteStyle)}
+              >
                 <SelectTrigger className="w-36" aria-label="导出格式">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="md">Markdown</SelectItem>
                   <SelectItem value="text">纯文本</SelectItem>
+                  <SelectItem value="apa">APA</SelectItem>
+                  <SelectItem value="gb7714">GB/T 7714</SelectItem>
+                  <SelectItem value="bibtex">BibTeX</SelectItem>
                 </SelectContent>
               </Select>
               <CopyButton text={worksText} />
@@ -381,15 +423,18 @@ export function ExportClient({ works, projects, dump }: ExportClientProps) {
       {/* 3. 整库 JSON 备份 / 恢复 */}
       <Card>
         <CardHeader>
-          <h3 className="text-sm font-semibold text-foreground">整库备份与恢复</h3>
+          <h3 className="text-sm font-semibold text-foreground">
+            整库备份与恢复
+          </h3>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* 导出下载 */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              将全部数据(作品 {dump.works.length} · 项目 {dump.projects.length} · 投稿{" "}
-              {dump.submissions.length} · 标签 {dump.tags.length},共 {dumpCount}{" "}
-              条主记录)导出为 JSON 文件,作为复制 app.db 之外的二级备份。
+              将全部数据(作品 {dump.works.length} · 项目 {dump.projects.length}{" "}
+              · 投稿 {dump.submissions.length} · 标签 {dump.tags.length},共{" "}
+              {dumpCount} 条主记录)导出为 JSON 文件,作为复制 app.db
+              之外的二级备份。
             </p>
             <Button type="button" onClick={handleDownloadJson}>
               <Download />

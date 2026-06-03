@@ -21,7 +21,13 @@ import {
   PublicationsBarChart,
   ReviewCycleChart,
   TagPieChart,
-} from "@/components/dashboard/charts";
+  SubmissionOutcomePie,
+  SubmissionTrendChart,
+  CumulativePublicationsChart,
+  PublicationRolePie,
+  PublicationTypePie,
+  FundingByLevelChart,
+} from "@/components/dashboard/charts-lazy";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { SubmissionStatusBadge } from "@/components/submissions/submission-badges";
@@ -35,6 +41,15 @@ import {
 } from "@/db/queries/dashboard";
 import { listTagsWithCounts } from "@/db/queries/tags";
 import { listPendingSubmissions } from "@/db/queries/submissions";
+import {
+  getSubmissionOutcomes,
+  getAcceptanceRate,
+  getSubmissionTrendByYear,
+  getPublicationsByAuthorRole,
+  getPublicationsByType,
+  getCumulativePublicationsByYear,
+  getFundingSummary,
+} from "@/db/queries/analytics";
 import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -65,27 +80,48 @@ function DashCard({
 }
 
 export default async function DashboardPage() {
-  const [stats, pubByYear, pubHealth, cycles, closing, tagCounts, pending] =
-    await Promise.all([
-      getDashboardStats(),
-      getPublicationsByYear(),
-      getPublicationDataHealth(),
-      getReviewCycleByJournal(),
-      getClosingProjects(),
-      listTagsWithCounts(),
-      listPendingSubmissions(),
-    ]);
+  const [
+    stats,
+    pubByYear,
+    pubHealth,
+    cycles,
+    closing,
+    tagCounts,
+    pending,
+    outcomes,
+    acceptance,
+    subTrend,
+    pubByRole,
+    pubByType,
+    cumulative,
+    funding,
+  ] = await Promise.all([
+    getDashboardStats(),
+    getPublicationsByYear(),
+    getPublicationDataHealth(),
+    getReviewCycleByJournal(),
+    getClosingProjects(),
+    listTagsWithCounts(),
+    listPendingSubmissions(),
+    getSubmissionOutcomes(),
+    getAcceptanceRate(),
+    getSubmissionTrendByYear(),
+    getPublicationsByAuthorRole(),
+    getPublicationsByType(),
+    getCumulativePublicationsByYear(),
+    getFundingSummary(),
+  ]);
 
   // 年度图口径外的发表数据(仅在存在时提示,空库/干净数据不打扰)。
   const pubHealthMsgs: string[] = [];
   if (pubHealth.publishedMissingDate > 0) {
     pubHealthMsgs.push(
-      `${pubHealth.publishedMissingDate} 件「已发表」未填发表日期`
+      `${pubHealth.publishedMissingDate} 件「已发表」未填发表日期`,
     );
   }
   if (pubHealth.datedNotPublished > 0) {
     pubHealthMsgs.push(
-      `${pubHealth.datedNotPublished} 件填了发表日期但状态非「已发表」`
+      `${pubHealth.datedNotPublished} 件填了发表日期但状态非「已发表」`,
     );
   }
 
@@ -106,7 +142,11 @@ export default async function DashboardPage() {
         {/* 关键数字 */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard icon={FileText} label="作品总数" value={stats.totalWorks} />
-          <StatCard icon={BadgeCheck} label="已发表" value={stats.publishedWorks} />
+          <StatCard
+            icon={BadgeCheck}
+            label="已发表"
+            value={stats.publishedWorks}
+          />
           <StatCard
             icon={Send}
             label="在投"
@@ -124,10 +164,15 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <DashCard title="年度发表数">
             {pubHealthMsgs.length > 0 ? (
-              <p className="mb-3 flex items-start gap-1.5 text-xs text-warning">
+              <Link
+                href="/health"
+                className="mb-3 flex items-start gap-1.5 text-xs text-warning transition-colors hover:text-warning/80"
+              >
                 <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-                <span>{pubHealthMsgs.join(";")},未计入年度统计</span>
-              </p>
+                <span>
+                  {pubHealthMsgs.join(";")},未计入年度统计 · 数据体检 →
+                </span>
+              </Link>
             ) : null}
             <PublicationsBarChart data={pubByYear} />
           </DashCard>
@@ -178,6 +223,60 @@ export default async function DashboardPage() {
                 ))}
               </ul>
             )}
+          </DashCard>
+        </div>
+
+        {/* 科研分析 */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-muted-foreground">
+            科研分析
+          </h3>
+
+          {/* 投稿:录用率 + 结果分布 + 逐年投稿量 */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <DashCard title="投稿录用率" hint={`已决 ${acceptance.decided} 篇`}>
+              <div className="flex h-64 flex-col items-center justify-center gap-2">
+                <span className="text-4xl font-bold text-foreground">
+                  {acceptance.decided === 0
+                    ? "—"
+                    : `${Math.round(acceptance.rate * 100)}%`}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  录用 {acceptance.accepted} · 被拒 {acceptance.rejected}
+                </span>
+              </div>
+            </DashCard>
+            <DashCard title="投稿结果分布">
+              <SubmissionOutcomePie data={outcomes} />
+            </DashCard>
+            <DashCard title="逐年投稿量">
+              <SubmissionTrendChart data={subTrend} />
+            </DashCard>
+          </div>
+
+          {/* 发表:累计曲线 + 作者角色 + 类型 */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <DashCard title="累计发表">
+              <CumulativePublicationsChart data={cumulative} />
+            </DashCard>
+            <DashCard title="作者角色分布">
+              <PublicationRolePie data={pubByRole} />
+            </DashCard>
+            <DashCard title="发表类型分布">
+              <PublicationTypePie data={pubByType} />
+            </DashCard>
+          </div>
+
+          {/* 经费汇总 */}
+          <DashCard
+            title="经费汇总(按级别 / 币种)"
+            hint={
+              funding.textOnlyCount > 0
+                ? `${funding.textOnlyCount} 个项目仅有文本经费,未计入`
+                : undefined
+            }
+          >
+            <FundingByLevelChart data={funding.byLevel} />
           </DashCard>
         </div>
 
@@ -243,7 +342,9 @@ export default async function DashboardPage() {
                         </Link>
                         <ProjectStatusBadge status={p.status} />
                         <span className="text-xs text-muted-foreground">
-                          {p.end_date ? `截止 ${formatDate(p.end_date)}` : "未设截止"}
+                          {p.end_date
+                            ? `截止 ${formatDate(p.end_date)}`
+                            : "未设截止"}
                           {p.daysToDeadline !== null
                             ? p.daysToDeadline < 0
                               ? ` · 已过期 ${-p.daysToDeadline} 天`

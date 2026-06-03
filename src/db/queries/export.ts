@@ -3,7 +3,7 @@
 // getAllWorksForExport:全部作品(完整字段),用于「成果清单」(按年份 / 类型)。
 // getProjectsWithOutputs:全部项目 + 各自挂接的成果,用于「项目结题成果列表」。
 // getDatabaseDump:六张表的整库快照,用于「导出全部数据为 JSON」二级备份。
-import { desc, eq, asc } from "drizzle-orm";
+import { desc, eq, asc, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -17,9 +17,56 @@ import {
 import type { Work } from "@/db/schema";
 import type { WorkType, WorkStatus } from "@/lib/constants";
 
+// 作品 + 解析后的期刊(供引用导出):works.journal 缺失时由其投稿兜底。
+export interface WorkForExport extends Work {
+  resolvedJournal: string | null;
+}
+
 // 成果清单数据:全部作品,已发表者按发表日期倒序(NULL 日期排最后)。
-export async function getAllWorksForExport(): Promise<Work[]> {
-  return db.select().from(works).orderBy(desc(works.published_at)).all();
+// 额外解析 resolvedJournal:优先 works.journal;缺失时取该作品「录用 > 最近已决 > 最新轮次」投稿的 journal。
+export async function getAllWorksForExport(): Promise<WorkForExport[]> {
+  const rows = db.select().from(works).orderBy(desc(works.published_at)).all();
+
+  const needIds = rows.filter((w) => !w.journal).map((w) => w.id);
+  const fallback = new Map<number, string>();
+  if (needIds.length > 0) {
+    const subs = db
+      .select({
+        work_id: submissions.work_id,
+        journal: submissions.journal,
+        status: submissions.status,
+        decided_at: submissions.decided_at,
+        round: submissions.round,
+      })
+      .from(submissions)
+      .where(inArray(submissions.work_id, needIds))
+      .all();
+
+    const byWork = new Map<number, typeof subs>();
+    for (const s of subs) {
+      const list = byWork.get(s.work_id);
+      if (list) list.push(s);
+      else byWork.set(s.work_id, [s]);
+    }
+    for (const [workId, list] of byWork) {
+      // 排序优先级:录用 > 决定日期较近 > 轮次较大;取首条的 journal。
+      const best = [...list].sort((a, b) => {
+        const ac = a.status === "录用" ? 1 : 0;
+        const bc = b.status === "录用" ? 1 : 0;
+        if (ac !== bc) return bc - ac;
+        const ad = a.decided_at ?? "";
+        const bd = b.decided_at ?? "";
+        if (ad !== bd) return bd.localeCompare(ad);
+        return b.round - a.round;
+      })[0];
+      if (best) fallback.set(workId, best.journal);
+    }
+  }
+
+  return rows.map((w) => ({
+    ...w,
+    resolvedJournal: w.journal ?? fallback.get(w.id) ?? null,
+  }));
 }
 
 // 项目导出的单条成果(作品精简信息)。
@@ -45,7 +92,11 @@ export interface ProjectWithOutputsExport {
 export async function getProjectsWithOutputs(): Promise<
   ProjectWithOutputsExport[]
 > {
-  const rows = db.select().from(projects).orderBy(desc(projects.updated_at)).all();
+  const rows = db
+    .select()
+    .from(projects)
+    .orderBy(desc(projects.updated_at))
+    .all();
   if (rows.length === 0) return [];
 
   // 一次取出全部「项目 ↔ 成果」连接(带作品精简字段),再在 JS 内按 project_id 分组,

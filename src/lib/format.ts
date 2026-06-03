@@ -29,7 +29,7 @@ function parseDate(value: string | null | undefined): Date | null {
     return makeLocalDate(
       Number(dateOnly[1]),
       Number(dateOnly[2]),
-      Number(dateOnly[3])
+      Number(dateOnly[3]),
     );
   }
   const date = new Date(trimmed);

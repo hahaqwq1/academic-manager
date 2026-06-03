@@ -4,7 +4,7 @@
 // getWorkById:单条作品 + 其标签;不存在返回 null。
 //
 // 标签关联:entity_tags 多态表(entity_type='work' and entity_id=works.id and tag_id)。
-import { eq, and, or, inArray, desc, count } from "drizzle-orm";
+import { eq, and, or, inArray, desc, count, gte, lte } from "drizzle-orm";
 
 import { db } from "@/db";
 import { works, entity_tags, tags } from "@/db/schema";
@@ -23,6 +23,8 @@ export interface ListWorksParams {
   type?: WorkType;
   status?: WorkStatus;
   tagId?: number;
+  from?: string; // published_at 区间起(YYYY-MM-DD,含)
+  to?: string; // published_at 区间止(YYYY-MM-DD,含)
   page?: number;
   pageSize?: number;
 }
@@ -51,8 +53,8 @@ function loadTagsForWorks(workIds: number[]): Map<number, Tag[]> {
     .where(
       and(
         eq(entity_tags.entity_type, "work"),
-        inArray(entity_tags.entity_id, workIds)
-      )
+        inArray(entity_tags.entity_id, workIds),
+      ),
     )
     .all();
 
@@ -69,10 +71,11 @@ function loadTagsForWorks(workIds: number[]): Map<number, Tag[]> {
 
 // 作品列表:筛选 + 分页 + 排序 + 标签填充。
 export async function listWorks(
-  params: ListWorksParams = {}
+  params: ListWorksParams = {},
 ): Promise<ListWorksResult> {
   const page = params.page && params.page > 0 ? params.page : 1;
-  const pageSize = params.pageSize && params.pageSize > 0 ? params.pageSize : 20;
+  const pageSize =
+    params.pageSize && params.pageSize > 0 ? params.pageSize : 20;
 
   // 组装 where 条件。
   const conditions = [];
@@ -85,8 +88,14 @@ export async function listWorks(
   }
   if (params.q && params.q.trim() !== "") {
     const q = params.q.trim();
+    // 全文检索扩展到 标题 / 摘要 / 作者 / 备注(LIKE 子串,对中英文一致;通配符转义见 like.ts)。
     conditions.push(
-      or(likeContains(works.title, q), likeContains(works.summary, q))
+      or(
+        likeContains(works.title, q),
+        likeContains(works.summary, q),
+        likeContains(works.authors, q),
+        likeContains(works.notes, q),
+      ),
     );
   }
   if (params.tagId !== undefined) {
@@ -97,20 +106,25 @@ export async function listWorks(
       .where(
         and(
           eq(entity_tags.entity_type, "work"),
-          eq(entity_tags.tag_id, params.tagId)
-        )
+          eq(entity_tags.tag_id, params.tagId),
+        ),
       );
     conditions.push(inArray(works.id, taggedIds));
+  }
+  // 发表日期区间(YYYY-MM-DD 字典序即时间序;published_at 为 NULL 的在设区间时被排除)。
+  if (params.from) {
+    conditions.push(gte(works.published_at, params.from));
+  }
+  if (params.to) {
+    conditions.push(lte(works.published_at, params.to));
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   // 总数(同 where)。
-  const [{ value: total }] = db
-    .select({ value: count() })
-    .from(works)
-    .where(whereClause)
-    .all();
+  const total =
+    db.select({ value: count() }).from(works).where(whereClause).all()[0]
+      ?.value ?? 0;
 
   const pageCount = total === 0 ? 0 : Math.ceil(total / pageSize);
 
@@ -146,7 +160,7 @@ export async function getWorkById(id: number): Promise<WorkWithTags | null> {
     .from(entity_tags)
     .innerJoin(tags, eq(entity_tags.tag_id, tags.id))
     .where(
-      and(eq(entity_tags.entity_type, "work"), eq(entity_tags.entity_id, id))
+      and(eq(entity_tags.entity_type, "work"), eq(entity_tags.entity_id, id)),
     )
     .all();
 

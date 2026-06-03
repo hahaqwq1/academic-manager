@@ -21,25 +21,25 @@ export interface DashboardStats {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const [{ value: totalWorks }] = db
-    .select({ value: count() })
-    .from(works)
-    .all();
-  const [{ value: publishedWorks }] = db
-    .select({ value: count() })
-    .from(works)
-    .where(eq(works.status, "已发表"))
-    .all();
-  const [{ value: totalProjects }] = db
-    .select({ value: count() })
-    .from(projects)
-    .all();
+  const totalWorks =
+    db.select({ value: count() }).from(works).all()[0]?.value ?? 0;
+  const publishedWorks =
+    db
+      .select({ value: count() })
+      .from(works)
+      .where(eq(works.status, "已发表"))
+      .all()[0]?.value ?? 0;
+  const totalProjects =
+    db.select({ value: count() }).from(projects).all()[0]?.value ?? 0;
   // 与 /submissions 在投视图(listPendingSubmissions)口径一致:在审且未出结果。
-  const [{ value: pendingSubmissions }] = db
-    .select({ value: count() })
-    .from(submissions)
-    .where(and(eq(submissions.status, "在审"), isNull(submissions.decided_at)))
-    .all();
+  const pendingSubmissions =
+    db
+      .select({ value: count() })
+      .from(submissions)
+      .where(
+        and(eq(submissions.status, "在审"), isNull(submissions.decided_at)),
+      )
+      .all()[0]?.value ?? 0;
 
   return { totalWorks, publishedWorks, totalProjects, pendingSubmissions };
 }
@@ -84,16 +84,18 @@ export interface PublicationDataHealth {
 }
 
 export async function getPublicationDataHealth(): Promise<PublicationDataHealth> {
-  const [{ value: publishedMissingDate }] = db
-    .select({ value: count() })
-    .from(works)
-    .where(and(eq(works.status, "已发表"), isNull(works.published_at)))
-    .all();
-  const [{ value: datedNotPublished }] = db
-    .select({ value: count() })
-    .from(works)
-    .where(and(isNotNull(works.published_at), ne(works.status, "已发表")))
-    .all();
+  const publishedMissingDate =
+    db
+      .select({ value: count() })
+      .from(works)
+      .where(and(eq(works.status, "已发表"), isNull(works.published_at)))
+      .all()[0]?.value ?? 0;
+  const datedNotPublished =
+    db
+      .select({ value: count() })
+      .from(works)
+      .where(and(isNotNull(works.published_at), ne(works.status, "已发表")))
+      .all()[0]?.value ?? 0;
   return { publishedMissingDate, datedNotPublished };
 }
 
@@ -122,7 +124,7 @@ export async function getReviewCycleByJournal(): Promise<JournalCycle[]> {
     if (!submitted || !decided) continue;
     const days = Math.max(
       0,
-      Math.round((decided.getTime() - submitted.getTime()) / DAY_MS)
+      Math.round((decided.getTime() - submitted.getTime()) / DAY_MS),
     );
     const cur = agg.get(r.journal) ?? { totalDays: 0, count: 0 };
     cur.totalDays += days;
@@ -166,8 +168,7 @@ export async function getClosingProjects(): Promise<ClosingProject[]> {
       : null;
 
     const isClosing = p.status === "结题中";
-    const isNearDeadline =
-      daysToDeadline !== null && daysToDeadline <= 90; // 未来90天内或已过期
+    const isNearDeadline = daysToDeadline !== null && daysToDeadline <= 90; // 未来90天内或已过期
 
     if (isClosing || isNearDeadline) {
       result.push({
