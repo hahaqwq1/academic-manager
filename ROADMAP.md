@@ -2,7 +2,7 @@
 
 > 主功能已完整、测试全绿、已开源、**仅本机运行(不上 VPS)**。本文件记录后续按 SemVer 务实落地的版本规划:**小版本=向后兼容增量,大版本=动数据模型/迁移/核心能力**。沿用「一次一刀、做完跑四道门(`tsc` / `lint` / `test` / `build` 全 0)再进下一刀」的节奏。
 
-## 现状(截至 2026-06,v0.2)
+## 现状(截至 2026-06,v1.0)
 
 - **主线 Phase 0→7** + **升级线 P0→P3** + **资深建议 Tier 0**:全部完成。
 - **原 Tier 1–4 路线图**:数据完整性(跨字段日期校验、**DB 级 CHECK 约束**、看板数据健康)、组件测试、⌘K 命令面板、列表页错误边界、图表懒加载、工程化(Prettier/lint-staged/jsx-a11y/tsconfig 收严/CI v5)——**已基本落地**(残项见 v0.3)。
@@ -28,20 +28,20 @@
 
 把已做完的一大批落地为可信提交历史(按域 6–8 个原子 commit)+ README/PROJECT_SPEC/DEPLOY 补记新功能、统一「仅本机运行」口径 + 版本号 → 0.2.0。
 
-### v0.3 — 残项清零(minor)
+### v0.3 — 残项清零(minor)✅
 
 - **可达性**:skip-to-content、`@media (prefers-reduced-motion)`、三图 `role="img"`+`aria-label`+sr-only 摘要
 - **打印样式**:`/export` 的 `@media print`(隐背景、留边框、A4)
 - **工程化收尾**:ESLint import 排序;补开 `noUnusedLocals` / `noUnusedParameters` / `noImplicitReturns`;CI 把 Lint 前置
 - 可选补测:`getSearchIndex` 查询测试、命令面板冒烟测试
 
-### v0.4 — 导出最后一公里·上(minor,纯本地零外部依赖)
+### v0.4 — 导出最后一公里·上(minor,纯本地零外部依赖)✅
 
 - **年度报告 / 述职材料一键生成**:`/reports` 页 + `annual-report.ts`(按年份复用 analytics/dashboard 聚合,补当年新立项/结题)+ Markdown 预览
 - **`.ics` 截止日历导出**:投稿超期阈值、项目 `end_date` 导成标准日历文件,交系统日历到点提醒
 - 看板小增量(可选):投稿漏斗 / 期刊命中率 / 主题×年份热力
 
-### ★ v1.0 — 封版里程碑(打磨而非堆功能)
+### ★ v1.0 — 封版里程碑(打磨而非堆功能)✅
 
 - **docx / Word 一键导出**:复用导出页已格式化数据,纯 JS `docx` 库生成下载
 - **本机文件可点开**:详情页一键用系统默认程序打开论文/审稿意见、「在文件夹中显示」、选文件写回路径
