@@ -30,7 +30,14 @@ describe("枚举值集合", () => {
     expect(WORK_TYPES).toEqual(["paper", "commentary", "draft", "other"]);
   });
   it("works.status", () => {
-    expect(WORK_STATUSES).toEqual(["构思", "写作中", "已完成", "投稿中", "已发表", "已搁置"]);
+    expect(WORK_STATUSES).toEqual([
+      "构思",
+      "写作中",
+      "已完成",
+      "投稿中",
+      "已发表",
+      "已搁置",
+    ]);
   });
   it("author_role", () => {
     expect(AUTHOR_ROLES).toEqual(["第一作者", "通讯作者", "独著", "参与"]);
@@ -38,10 +45,23 @@ describe("枚举值集合", () => {
   it("projects.level / role / status", () => {
     expect(PROJECT_LEVELS).toEqual(["国家级", "省部级", "校级", "其他"]);
     expect(PROJECT_ROLES).toEqual(["主持", "参与"]);
-    expect(PROJECT_STATUSES).toEqual(["拟申报", "申报中", "已立项", "结题中", "已结题", "未中"]);
+    expect(PROJECT_STATUSES).toEqual([
+      "拟申报",
+      "申报中",
+      "已立项",
+      "结题中",
+      "已结题",
+      "未中",
+    ]);
   });
   it("submissions.status", () => {
-    expect(SUBMISSION_STATUSES).toEqual(["在审", "退修", "录用", "被拒", "已撤稿"]);
+    expect(SUBMISSION_STATUSES).toEqual([
+      "在审",
+      "退修",
+      "录用",
+      "被拒",
+      "已撤稿",
+    ]);
   });
   it("entity_type", () => {
     expect(ENTITY_TYPES).toEqual(["work", "project"]);

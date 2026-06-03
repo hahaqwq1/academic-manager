@@ -130,7 +130,8 @@ function seed(): void {
           authors: "示例作者, 合作者二",
           author_role: "第一作者",
           word_count: 11000,
-          summary: "占位摘要:通过多案例比较,揭示落地过程中的供需错配与调适机制。",
+          summary:
+            "占位摘要:通过多案例比较,揭示落地过程中的供需错配与调适机制。",
           notes: "示例备注:纳入某示例项目结题成果。",
           file_path: "/papers/2024/sample-paper-3.pdf",
           published_at: "2024-11-20",
@@ -142,7 +143,8 @@ function seed(): void {
           authors: "示例作者",
           author_role: "独著",
           word_count: null,
-          summary: "占位说明:整理某时间段相关文献的结构化数据集,供后续研究使用。",
+          summary:
+            "占位说明:整理某时间段相关文献的结构化数据集,供后续研究使用。",
           notes: "示例备注:因数据源更新暂停维护。",
           file_path: "/datasets/sample-dataset.csv",
           published_at: null,
@@ -151,7 +153,9 @@ function seed(): void {
       .returning()
       .all();
 
-    const workIdByTitle = new Map(insertedWorks.map((w) => [w.title, w.id] as const));
+    const workIdByTitle = new Map(
+      insertedWorks.map((w) => [w.title, w.id] as const),
+    );
     const workId = (title: string): number => {
       const id = workIdByTitle.get(title);
       if (id === undefined) throw new Error(`缺少作品:${title}`);
@@ -205,7 +209,7 @@ function seed(): void {
       .all();
 
     const projectIdByTitle = new Map(
-      insertedProjects.map((p) => [p.title, p.id] as const)
+      insertedProjects.map((p) => [p.title, p.id] as const),
     );
     const projectId = (title: string): number => {
       const id = projectIdByTitle.get(title);
@@ -267,13 +271,41 @@ function seed(): void {
     // --- 实体标签:给 works 与 projects 都打标签 ---
     tx.insert(schema.entity_tags)
       .values([
-        { entity_type: "work", entity_id: workId(PUBLISHED_WORK_1), tag_id: tagId("研究主题一") },
-        { entity_type: "work", entity_id: workId(SUBMITTING_WORK), tag_id: tagId("研究主题二") },
-        { entity_type: "work", entity_id: workId(COMMENTARY_WORK), tag_id: tagId("研究主题三") },
-        { entity_type: "work", entity_id: workId(PUBLISHED_WORK_2), tag_id: tagId("案例研究") },
-        { entity_type: "project", entity_id: projectId(PROJECT_FINISHING), tag_id: tagId("研究主题一") },
-        { entity_type: "project", entity_id: projectId(PROJECT_APPROVED), tag_id: tagId("研究主题二") },
-        { entity_type: "project", entity_id: projectId(PROJECT_FINISHED), tag_id: tagId("研究方法") },
+        {
+          entity_type: "work",
+          entity_id: workId(PUBLISHED_WORK_1),
+          tag_id: tagId("研究主题一"),
+        },
+        {
+          entity_type: "work",
+          entity_id: workId(SUBMITTING_WORK),
+          tag_id: tagId("研究主题二"),
+        },
+        {
+          entity_type: "work",
+          entity_id: workId(COMMENTARY_WORK),
+          tag_id: tagId("研究主题三"),
+        },
+        {
+          entity_type: "work",
+          entity_id: workId(PUBLISHED_WORK_2),
+          tag_id: tagId("案例研究"),
+        },
+        {
+          entity_type: "project",
+          entity_id: projectId(PROJECT_FINISHING),
+          tag_id: tagId("研究主题一"),
+        },
+        {
+          entity_type: "project",
+          entity_id: projectId(PROJECT_APPROVED),
+          tag_id: tagId("研究主题二"),
+        },
+        {
+          entity_type: "project",
+          entity_id: projectId(PROJECT_FINISHED),
+          tag_id: tagId("研究方法"),
+        },
       ])
       .run();
   });

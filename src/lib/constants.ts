@@ -96,6 +96,14 @@ export const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// projects.funding_currency —— 经费币种(中文值即 label)。表默认存「元」;
+// 汇总时按币种分组(不做汇率换算),故「万元」与「元」分列统计。
+// ---------------------------------------------------------------------------
+export const CURRENCIES = ["元", "万元", "美元", "欧元"] as const;
+export type Currency = (typeof CURRENCIES)[number];
+export const currencySchema = z.enum(CURRENCIES);
+
+// ---------------------------------------------------------------------------
 // 投稿超期天数阈值:投稿在审超过该天数视为「超期」。
 // ---------------------------------------------------------------------------
 export const OVERDUE_DAYS = 90;

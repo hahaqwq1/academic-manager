@@ -12,7 +12,7 @@ describe("数据库迁移", () => {
     const sqlite = createTestSqlite();
     const rows = sqlite
       .prepare(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '__drizzle%'"
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '__drizzle%'",
       )
       .all() as { name: string }[];
     const tables = rows.map((r) => r.name).sort();
@@ -25,7 +25,7 @@ describe("数据库迁移", () => {
         "submissions",
         "tags",
         "works",
-      ].sort()
+      ].sort(),
     );
     sqlite.close();
   });
@@ -50,14 +50,24 @@ describe("数据库迁移", () => {
   it("(work_id,round) 唯一索引实际拦截重复轮次", () => {
     const sqlite = createTestSqlite();
     sqlite
-      .prepare("INSERT INTO works (type,title,status,created_at,updated_at) VALUES (?,?,?,?,?)")
-      .run("paper", "T", "投稿中", "2025-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z");
+      .prepare(
+        "INSERT INTO works (type,title,status,created_at,updated_at) VALUES (?,?,?,?,?)",
+      )
+      .run(
+        "paper",
+        "T",
+        "投稿中",
+        "2025-01-01T00:00:00.000Z",
+        "2025-01-01T00:00:00.000Z",
+      );
     const insertSub = sqlite.prepare(
-      "INSERT INTO submissions (work_id,journal,round,status,submitted_at) VALUES (?,?,?,?,?)"
+      "INSERT INTO submissions (work_id,journal,round,status,submitted_at) VALUES (?,?,?,?,?)",
     );
     insertSub.run(1, "刊A", 1, "在审", "2025-01-01");
     // 同一作品同一轮次再插一条 → 唯一约束应抛错。
-    expect(() => insertSub.run(1, "刊B", 1, "退修", "2025-02-01")).toThrow(/UNIQUE/i);
+    expect(() => insertSub.run(1, "刊B", 1, "退修", "2025-02-01")).toThrow(
+      /UNIQUE/i,
+    );
     sqlite.close();
   });
 
