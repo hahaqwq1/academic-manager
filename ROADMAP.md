@@ -1,60 +1,74 @@
-# 学术资料管理系统 · 路线图
+# 学术资料管理系统 · 版本路线图
 
-> 主功能已完整、测试全绿、已开源。本文件记录**后续「目前没用但值得上」的增量改进**,按性价比分批,**每批独立可单做**,沿用「一次一项、做完跑全绿再进下一项」的节奏。
+> 主功能已完整、测试全绿、已开源、**仅本机运行(不上 VPS)**。本文件记录后续按 SemVer 务实落地的版本规划:**小版本=向后兼容增量,大版本=动数据模型/迁移/核心能力**。沿用「一次一刀、做完跑四道门(`tsc` / `lint` / `test` / `build` 全 0)再进下一刀」的节奏。
 
-## 现状(截至 2026-06-01)
+## 现状(截至 2026-06,v0.2)
 
-- **主线 Phase 0→7**:脚手架 / 数据层 / 作品·项目·投稿·标签 CRUD / 看板 / 导出 / Docker —— 全部完成。
-- **升级线 P0→P3**:正确性 · 体验打磨 · 测试+CI · JSON 导入恢复 · 投稿录用联动 · N+1 消除 · 抽公共 · 小加固 —— 全部完成。(P4 VPS 硬化已取消:本项目不上 VPS。)
-- **资深建议线 Tier 0**:自动滚动备份+完整性自检 · 搜索 LIKE 转义 · 列级 enum 类型 —— 全部完成。
-- **资深评阅线 Tier 1-0(数据正确性加固)**:`updateWork`/`updateProject` 查 `info.changes`→0 抛业务错并回滚(杜绝「编辑已删实体」写入孤儿标签)· create/update 四处 `tagIds` 去重 · 导入恢复 schema 补 `word_count ≥ 0` —— 已完成。
-- 指标:**151 测试 / 17 文件全过**;`tsc --noEmit`、`eslint`、`next build` 均 0。
+- **主线 Phase 0→7** + **升级线 P0→P3** + **资深建议 Tier 0**:全部完成。
+- **原 Tier 1–4 路线图**:数据完整性(跨字段日期校验、**DB 级 CHECK 约束**、看板数据健康)、组件测试、⌘K 命令面板、列表页错误边界、图表懒加载、工程化(Prettier/lint-staged/jsx-a11y/tsconfig 收严/CI v5)——**已基本落地**(残项见 v0.3)。
+- **净增功能域**:CrossRef DOI 元数据抓取、引用格式化(APA / GB-T 7714 / BibTeX)、科研分析 6 聚合、全文搜索 + 日期区间筛选、数据体检中心 `/health` + 孤儿清理、结构化经费。
+- 指标:**237 测试 / 27 文件全过**;`tsc --noEmit`、`eslint`、`next build` 均 0。
 
 ---
 
-## 待办路线图
+## 版本策略:小版本 vs 大版本
 
-### Tier 1 — 数据完整性 & 正确性
-| 项 | 做什么 | 关键文件 | 量 |
-|---|---|---|---|
-| **1-1 跨字段日期校验** | `zod superRefine`:`end_date ≥ start_date`、`decided_at ≥ submitted_at`,两端有值才校验,报友好中文错误(挂到对应字段) | `src/lib/validations.ts`(+ 单测) | 低 |
-| **1-2 DB 级 CHECK 约束** | drizzle 表定义 `check()` 加枚举白名单 + `round ≥ 1` + `word_count ≥ 0`,`db:generate` 出新迁移;迁移测试补「非法值被 DB 拒」 | `src/db/schema.ts`、`drizzle/0002_*.sql`、`test/migration.test.ts` | 中 |
-| **1-3 看板数据健康提示** | 「N 篇已标『已发表』但缺发表日期,未计入年度图」一行提示,可点击跳筛选(已发表口径按 status、年度图按 published_at,二者会差) | `src/db/queries/dashboard.ts`、`src/app/page.tsx`、`src/components/dashboard/*` | 低-中 |
+|                              | 判定线                                         | 典型内容                                                  |
+| ---------------------------- | ---------------------------------------------- | --------------------------------------------------------- |
+| **小版本 minor(0.x)/ patch** | 向后兼容,**不写新迁移、不改数据模型/运行形态** | 收口、残项收尾、单个 S/M 功能、工程化补强、bug 修补、文档 |
+| **大版本 major(1.0+)**       | **改数据模型 / 迁移 / 核心能力**               | 新表+新迁移或外部依赖变化                                 |
 
-### Tier 2 — 补 UI 测试空白(目前最大的真实缺口)
-| 项 | 做什么 | 关键文件 | 量 |
-|---|---|---|---|
-| **2-1 组件测试** | 引入 `@testing-library/react` + `happy-dom`(组件测试文件用 `// @vitest-environment happy-dom`)。覆盖:`EntityList` 乐观删除/失败回滚、`EntityFilters` 防抖·清除筛选·陈旧 `?tag` 清除按钮、`work-submissions-manager` 录用后弹「标为已发表」toast 并触发 `markWorkPublished` | `test/components/*`、`package.json`、`vitest.config.ts` | 中 |
+**v1.0 特例**:按「功能完备 · 文档齐 · 可对外稳定发布」里程碑定义(打磨封版),非「加大功能」。
 
-> 不建议上整套 Playwright E2E——对单机工具偏重;组件测试以更低成本覆盖同样的风险面。
+---
 
-### Tier 3 — 高手向 & 打磨
-| 项 | 做什么 | 关键文件 | 量 |
-|---|---|---|---|
-| **3-1 全局 ⌘K 命令面板** | 用已装的 `cmdk`/`CommandDialog`(目前只用在成果挂接下拉):快速导航 6 个区 + 「新建作品/项目」+ 跳转搜索 | 新增 `command-palette.tsx`、挂到 `app-shell` | 中 |
-| **3-2 列表页 error 边界** | `/works /projects /submissions /tags /export` 补 `error.tsx`(照现成 `works/[id]/error.tsx`),取数报错优雅降级而非冒到根边界 | `src/app/*/error.tsx` | 低 |
-| **3-3 可达性快赢** | AppShell 顶部 skip-to-content;`globals.css` 加 `@media (prefers-reduced-motion)`;三张图加 `role="img"`+`aria-label`+sr-only 数据摘要 | `app-shell.tsx`、`globals.css`、`dashboard/charts.tsx` | 低 |
-| **3-4 recharts 懒加载** | 看板图表改 `next/dynamic` 延迟加载,瘦首屏 JS(现为直接 import) | `src/app/page.tsx` | 低 |
-| **3-5 /export 打印样式** | `@media print` 打印/导 PDF 友好(隐背景、留边框、A4) | `globals.css`、export 页 | 低 |
+## 版本线
 
-### Tier 4 — 仓库工程化(面向开源克隆者;单人可选)
-| 项 | 做什么 | 量 |
-|---|---|---|
-| **4-1 Prettier + pre-commit** | `prettier` + `lint-staged` + husky `pre-commit`(提交前自动 `eslint --fix` + `prettier`) | 低 |
-| **4-2 ESLint 增强** | `eslint-plugin-jsx-a11y`(无障碍静态检查)+ import 排序 | 低 |
-| **4-3 tsconfig 收严** | 开 `noUncheckedIndexedAccess`(抓 `const [x] = …all()` 隐式 undefined)、`noUnusedLocals/Parameters`、`noImplicitReturns`,顺手修几十行 | 低-中 |
-| **4-4 CI 小升级** | `actions/checkout@`、`setup-node@` v4→v5(消 Node20 弃用告警);lint/tsc 提到靠前;可选跑 `test:coverage` | 低 |
+### v0.2 — 成果收口 ✅(当前)
+
+把已做完的一大批落地为可信提交历史(按域 6–8 个原子 commit)+ README/PROJECT_SPEC/DEPLOY 补记新功能、统一「仅本机运行」口径 + 版本号 → 0.2.0。
+
+### v0.3 — 残项清零(minor)
+
+- **可达性**:skip-to-content、`@media (prefers-reduced-motion)`、三图 `role="img"`+`aria-label`+sr-only 摘要
+- **打印样式**:`/export` 的 `@media print`(隐背景、留边框、A4)
+- **工程化收尾**:ESLint import 排序;补开 `noUnusedLocals` / `noUnusedParameters` / `noImplicitReturns`;CI 把 Lint 前置
+- 可选补测:`getSearchIndex` 查询测试、命令面板冒烟测试
+
+### v0.4 — 导出最后一公里·上(minor,纯本地零外部依赖)
+
+- **年度报告 / 述职材料一键生成**:`/reports` 页 + `annual-report.ts`(按年份复用 analytics/dashboard 聚合,补当年新立项/结题)+ Markdown 预览
+- **`.ics` 截止日历导出**:投稿超期阈值、项目 `end_date` 导成标准日历文件,交系统日历到点提醒
+- 看板小增量(可选):投稿漏斗 / 期刊命中率 / 主题×年份热力
+
+### ★ v1.0 — 封版里程碑(打磨而非堆功能)
+
+- **docx / Word 一键导出**:复用导出页已格式化数据,纯 JS `docx` 库生成下载
+- **本机文件可点开**:详情页一键用系统默认程序打开论文/审稿意见、「在文件夹中显示」、选文件写回路径
+- **字体自托管**:`next/font/google` → `next/font/local`,消除 build 期联网,保离线首启可靠
+- **容灾纪律**:异地副本约定写进 DEPLOY;`backup.ts` 关键事件落 `backups/backup.log`;`/health` 展示最近备份时间与完整性状态
+- **文档终检**:README/SPEC/DEPLOY 齐全自洽;打 `v1.0` tag
+
+### v1.x — 输入侧效率(minor,均无新表)
+
+- `.bib` / RIS / DOI 批量导入(与 `doi` 唯一索引协同去重)
+- 键盘流批量操作(多选 + 批量改状态/打标签/挂接 + 事务 + 乐观回滚)
+- `/health` 第 6 类体检:`file_path` 非空但磁盘不存在
+
+### v2.0 — 本机增强能力跃迁(major,可选 · 绑触发条件,不到点就做)
+
+- **本地多附件**:新增 `attachments` 表 + 迁移 + CRUD(单条 `file_path` 不够用时)
+- **合作者 / 审稿人实体化**:`people` 表 + 关联,作者输入改可搜索下拉(低优先)
+- ~~FTS5 中文全文检索~~ **已搁置**:扩展 LIKE 对单人小库足够;仅当单表过万行且查询可感延迟(>200ms)、或需相关度排序/高亮时才评估(届时优先 SQLite 内置 trigram,不引第三方分词)
 
 ---
 
 ## 明确不做 / 降级(避免过度工程)
 
-- **Drizzle `relations()` 重写查询**:现查询已 N+1-free 且测试覆盖,改它高 churn、低边际收益。
-- **`notFound()→200` 尾巴**:父段 `loading.tsx` 流式 Suspense 致 `/works/999` 返 200 而非 404;单机本地无实害,最低优先。
-- **安全响应头 / `swcMinify`**:`swcMinify` 在 Next 16 已移除;安全头对本地单机价值低;均不做。
-- **Playwright 全套 E2E、覆盖率红线门禁、commitlint/约定式提交**:团队向重器,对单人项目过重(组件测试已覆盖核心风险)。
-- **VPS 相关**(健康检查、镜像瘦身、反代鉴权):本项目不上 VPS,整批取消。
+- **上 VPS / 鉴权 / 服务器文件托管 / 多端**:已永久排除(仅本机运行)。Docker / `DATA_DIR` 抽象 / `file_path` 只存引用予以**保留**(本身是好设计)。
+- **FTS5**:见 v2.0,已搁置。
+- **Playwright 全套 E2E、覆盖率红线门禁、commitlint、Drizzle `relations()` 重写、安全响应头**:对单人本地项目过重,组件测试 + 查询/动作测试已覆盖核心风险面。
 
 ## 落地后统一验证
 
-每条改完过四道门:`npx tsc --noEmit` + `npm run lint` + `npm test` + `npm run build` 全 0;新功能各自补测;必要时用**临时 `DATA_DIR`** 起 `next start` 冒烟。**纪律:绝不碰本地 `data/app.db`、绝不对本地实例跑 `npm run db:seed`。**
+每条改完过四道门:`npx tsc --noEmit` + `npm run lint` + `npm test` + `npm run build` 全 0;新功能各自补测。**纪律:绝不碰本地 `data/app.db`、绝不对本地实例跑 `npm run db:seed`(保持空库)。**
