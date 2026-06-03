@@ -90,6 +90,8 @@ function RenameTagDialog({
               id="rename-tag"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              // 对话框由用户主动打开,自动聚焦重命名输入框是符合无障碍预期的焦点转移(非页面加载抢焦点)。
+              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
             />
           </div>
@@ -177,7 +179,7 @@ export function TagsManager({ tags, activeTagId }: TagsManagerProps) {
               key={tag.id}
               className={cn(
                 "flex items-center gap-3 bg-card px-4 py-3 transition-colors hover:bg-muted/40",
-                activeTagId === tag.id && "bg-primary/5"
+                activeTagId === tag.id && "bg-primary/5",
               )}
             >
               <Link
@@ -188,12 +190,15 @@ export function TagsManager({ tags, activeTagId }: TagsManagerProps) {
                 <span
                   className={cn(
                     "truncate text-sm font-medium",
-                    activeTagId === tag.id ? "text-primary" : "text-foreground"
+                    activeTagId === tag.id ? "text-primary" : "text-foreground",
                   )}
                 >
                   {tag.name}
                 </span>
-                <Badge variant="outline" className="font-normal text-muted-foreground">
+                <Badge
+                  variant="outline"
+                  className="font-normal text-muted-foreground"
+                >
                   作品 {tag.workCount} · 项目 {tag.projectCount}
                 </Badge>
               </Link>

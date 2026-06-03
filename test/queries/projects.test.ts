@@ -42,7 +42,9 @@ describe("listProjects", () => {
     makeProject(ctx.db, { level: "校级", status: "已立项" });
     expect((await listProjects({ level: "国家级" })).total).toBe(2);
     expect((await listProjects({ status: "已立项" })).total).toBe(2);
-    expect((await listProjects({ level: "国家级", status: "结题中" })).total).toBe(1);
+    expect(
+      (await listProjects({ level: "国家级", status: "结题中" })).total,
+    ).toBe(1);
   });
 
   it("搜索覆盖 title / notes / grant_no", async () => {
@@ -62,12 +64,18 @@ describe("listProjects", () => {
     tagEntity(ctx.db, "work", p1.id, tag.id);
     const r = await listProjects({ tagId: tag.id });
     expect(r.total).toBe(1);
-    expect(r.items[0].id).toBe(p1.id);
+    expect(r.items[0]!.id).toBe(p1.id);
   });
 
   it("按 updated_at 倒序 + 标签填充", async () => {
-    const p1 = makeProject(ctx.db, { title: "旧", updated_at: "2025-01-01T00:00:00.000Z" });
-    makeProject(ctx.db, { title: "新", updated_at: "2025-06-01T00:00:00.000Z" });
+    const p1 = makeProject(ctx.db, {
+      title: "旧",
+      updated_at: "2025-01-01T00:00:00.000Z",
+    });
+    makeProject(ctx.db, {
+      title: "新",
+      updated_at: "2025-06-01T00:00:00.000Z",
+    });
     const tag = makeTag(ctx.db, "T");
     tagEntity(ctx.db, "project", p1.id, tag.id);
     const r = await listProjects();
@@ -82,8 +90,14 @@ describe("getProjectById", () => {
     const p = makeProject(ctx.db, { title: "目标项目" });
     const tag = makeTag(ctx.db, "标");
     tagEntity(ctx.db, "project", p.id, tag.id);
-    const w1 = makeWork(ctx.db, { title: "成果1", updated_at: "2025-01-01T00:00:00.000Z" });
-    const w2 = makeWork(ctx.db, { title: "成果2", updated_at: "2025-05-01T00:00:00.000Z" });
+    const w1 = makeWork(ctx.db, {
+      title: "成果1",
+      updated_at: "2025-01-01T00:00:00.000Z",
+    });
+    const w2 = makeWork(ctx.db, {
+      title: "成果2",
+      updated_at: "2025-05-01T00:00:00.000Z",
+    });
     linkOutput(ctx.db, p.id, w1.id);
     linkOutput(ctx.db, p.id, w2.id);
     const got = await getProjectById(p.id);

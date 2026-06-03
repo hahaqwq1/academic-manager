@@ -65,7 +65,7 @@ export interface EntitiesByTag {
 }
 
 export async function getEntitiesByTag(
-  tagId: number
+  tagId: number,
 ): Promise<EntitiesByTag | null> {
   const [tag] = db.select().from(tags).where(eq(tags.id, tagId)).all();
   if (!tag) return null;
@@ -75,7 +75,7 @@ export async function getEntitiesByTag(
     .select({ id: entity_tags.entity_id })
     .from(entity_tags)
     .where(
-      and(eq(entity_tags.entity_type, "work"), eq(entity_tags.tag_id, tagId))
+      and(eq(entity_tags.entity_type, "work"), eq(entity_tags.tag_id, tagId)),
     )
     .all()
     .map((r) => r.id);
@@ -84,7 +84,10 @@ export async function getEntitiesByTag(
     .select({ id: entity_tags.entity_id })
     .from(entity_tags)
     .where(
-      and(eq(entity_tags.entity_type, "project"), eq(entity_tags.tag_id, tagId))
+      and(
+        eq(entity_tags.entity_type, "project"),
+        eq(entity_tags.tag_id, tagId),
+      ),
     )
     .all()
     .map((r) => r.id);

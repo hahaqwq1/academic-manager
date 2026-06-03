@@ -25,7 +25,7 @@ export type ProjectActionState = {
 
 // 把 zod 的 issues 扁平化为「字段名 → 首条消息」的 map。
 function toFieldErrors(
-  issues: { path: PropertyKey[]; message: string }[]
+  issues: { path: PropertyKey[]; message: string }[],
 ): Record<string, string> {
   const errors: Record<string, string> = {};
   for (const issue of issues) {
@@ -41,7 +41,7 @@ function toFieldErrors(
 
 // 新建项目:校验 → 事务内插入 projects 取回 id,并批量写入 entity_tags → 跳转详情页。
 export async function createProject(
-  input: unknown
+  input: unknown,
 ): Promise<ProjectActionState> {
   const parsed = projectInputSchema.safeParse(input);
   if (!parsed.success) {
@@ -68,12 +68,15 @@ export async function createProject(
           status: data.status,
           grant_no: data.grant_no,
           funding: data.funding,
+          funding_amount: data.funding_amount,
+          funding_currency: data.funding_currency,
           start_date: data.start_date,
           end_date: data.end_date,
           notes: data.notes,
         })
         .returning({ id: projects.id })
         .all();
+      if (!row) throw new Error("项目插入后未返回行");
 
       if (uniqueTagIds.length > 0) {
         tx.insert(entity_tags)
@@ -82,7 +85,7 @@ export async function createProject(
               entity_type: "project" as const,
               entity_id: row.id,
               tag_id: tagId,
-            }))
+            })),
           )
           .run();
       }
@@ -103,7 +106,7 @@ export async function createProject(
 // 编辑项目:校验 → 更新 projects → 同步标签(先删后插)→ 跳转详情页。
 export async function updateProject(
   id: number,
-  input: unknown
+  input: unknown,
 ): Promise<ProjectActionState> {
   const parsed = projectInputSchema.safeParse(input);
   if (!parsed.success) {
@@ -128,6 +131,8 @@ export async function updateProject(
           status: data.status,
           grant_no: data.grant_no,
           funding: data.funding,
+          funding_amount: data.funding_amount,
+          funding_currency: data.funding_currency,
           start_date: data.start_date,
           end_date: data.end_date,
           notes: data.notes,
@@ -144,8 +149,8 @@ export async function updateProject(
         .where(
           and(
             eq(entity_tags.entity_type, "project"),
-            eq(entity_tags.entity_id, id)
-          )
+            eq(entity_tags.entity_id, id),
+          ),
         )
         .run();
 
@@ -156,7 +161,7 @@ export async function updateProject(
               entity_type: "project" as const,
               entity_id: id,
               tag_id: tagId,
-            }))
+            })),
           )
           .run();
       }
@@ -176,7 +181,7 @@ export async function updateProject(
 // 删除项目:事务内先删多态标签关联,再删 projects 本体。
 // project_outputs 由外键级联自动删除。不在此处 redirect,导航由调用方决定。
 export async function deleteProject(
-  id: number
+  id: number,
 ): Promise<{ ok: boolean; message?: string }> {
   try {
     db.transaction((tx) => {
@@ -184,8 +189,8 @@ export async function deleteProject(
         .where(
           and(
             eq(entity_tags.entity_type, "project"),
-            eq(entity_tags.entity_id, id)
-          )
+            eq(entity_tags.entity_id, id),
+          ),
         )
         .run();
 
@@ -205,7 +210,7 @@ export async function deleteProject(
 // 挂接成果:把一篇作品关联到项目。唯一索引去重,重复挂接静默忽略。
 export async function linkProjectOutput(
   projectId: number,
-  workId: number
+  workId: number,
 ): Promise<{ ok: boolean; message?: string }> {
   try {
     db.insert(project_outputs)
@@ -225,15 +230,15 @@ export async function linkProjectOutput(
 // 取消挂接:移除项目与某作品的关联。
 export async function unlinkProjectOutput(
   projectId: number,
-  workId: number
+  workId: number,
 ): Promise<{ ok: boolean; message?: string }> {
   try {
     db.delete(project_outputs)
       .where(
         and(
           eq(project_outputs.project_id, projectId),
-          eq(project_outputs.work_id, workId)
-        )
+          eq(project_outputs.work_id, workId),
+        ),
       )
       .run();
   } catch (error) {

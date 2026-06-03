@@ -41,7 +41,10 @@ export function ProjectsFilters({ allTags }: ProjectsFiltersProps) {
       placeholder: "标签",
       allLabel: "全部标签",
       triggerWidth: "sm:w-36",
-      options: allTags.map((tag) => ({ value: String(tag.id), label: tag.name })),
+      options: allTags.map((tag) => ({
+        value: String(tag.id),
+        label: tag.name,
+      })),
     },
   ];
 

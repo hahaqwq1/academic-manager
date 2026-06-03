@@ -30,7 +30,10 @@ afterEach(() => ctx.sqlite.close());
 
 describe("createTag", () => {
   it("空名被拒", async () => {
-    expect(await createTag("   ")).toMatchObject({ ok: false, message: "请输入标签名称" });
+    expect(await createTag("   ")).toMatchObject({
+      ok: false,
+      message: "请输入标签名称",
+    });
     expect(ctx.db.select().from(tags).all()).toHaveLength(0);
   });
 
@@ -57,7 +60,7 @@ describe("renameTag", () => {
   it("改名成功", async () => {
     const t = makeTag(ctx.db, "旧名");
     expect((await renameTag(t.id, "新名")).ok).toBe(true);
-    const [row] = ctx.db.select().from(tags).where(eq(tags.id, t.id)).all();
+    const row = ctx.db.select().from(tags).where(eq(tags.id, t.id)).all()[0]!;
     expect(row.name).toBe("新名");
   });
 
@@ -75,8 +78,16 @@ describe("deleteTag", () => {
     const t = makeTag(ctx.db, "T");
     tagEntity(ctx.db, "work", w.id, t.id);
     expect((await deleteTag(t.id)).ok).toBe(true);
-    expect(ctx.db.select().from(tags).where(eq(tags.id, t.id)).all()).toHaveLength(0);
+    expect(
+      ctx.db.select().from(tags).where(eq(tags.id, t.id)).all(),
+    ).toHaveLength(0);
     // entity_tags.tag_id 外键 onDelete:cascade。
-    expect(ctx.db.select().from(entity_tags).where(eq(entity_tags.tag_id, t.id)).all()).toHaveLength(0);
+    expect(
+      ctx.db
+        .select()
+        .from(entity_tags)
+        .where(eq(entity_tags.tag_id, t.id))
+        .all(),
+    ).toHaveLength(0);
   });
 });

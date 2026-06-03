@@ -5,7 +5,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 import { createTestContext, type TestDb } from "../helpers/test-db";
-import { makeWork, makeProject, makeTag, tagEntity } from "../helpers/factories";
+import {
+  makeWork,
+  makeProject,
+  makeTag,
+  tagEntity,
+} from "../helpers/factories";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -34,7 +39,11 @@ describe("listAllTags", () => {
     makeTag(ctx.db, "乙");
     makeTag(ctx.db, "甲");
     makeTag(ctx.db, "丙");
-    expect((await listAllTags()).map((t) => t.name)).toEqual(["丙", "乙", "甲"]);
+    expect((await listAllTags()).map((t) => t.name)).toEqual([
+      "丙",
+      "乙",
+      "甲",
+    ]);
   });
 });
 
@@ -51,7 +60,7 @@ describe("listTagsWithCounts", () => {
     tagEntity(ctx.db, "project", p1.id, a.id);
     tagEntity(ctx.db, "project", p1.id, b.id);
     const counts = Object.fromEntries(
-      (await listTagsWithCounts()).map((t) => [t.name, t])
+      (await listTagsWithCounts()).map((t) => [t.name, t]),
     );
     expect(counts["A"]).toMatchObject({ workCount: 2, projectCount: 1 });
     expect(counts["B"]).toMatchObject({ workCount: 0, projectCount: 1 });

@@ -35,7 +35,9 @@ export function MobileNav() {
           <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <GraduationCap className="size-4" />
           </span>
-          <span className="text-sm font-semibold tracking-tight">{APP_NAME}</span>
+          <span className="text-sm font-semibold tracking-tight">
+            {APP_NAME}
+          </span>
         </div>
         <nav className="px-3 py-2">
           <SidebarNav onNavigate={() => setOpen(false)} />

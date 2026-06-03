@@ -6,7 +6,12 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { eq, and } from "drizzle-orm";
 
 import { createTestContext, type TestDb } from "../helpers/test-db";
-import { makeWork, makeTag, makeSubmission, tagEntity } from "../helpers/factories";
+import {
+  makeWork,
+  makeTag,
+  makeSubmission,
+  tagEntity,
+} from "../helpers/factories";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -17,7 +22,7 @@ vi.mock("@/db", () => ({
 const redirectMock = vi.hoisted(() =>
   vi.fn((url: string) => {
     throw new Error(`NEXT_REDIRECT:${url}`);
-  })
+  }),
 );
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 const revalidateMock = vi.hoisted(() => vi.fn());
@@ -50,17 +55,22 @@ const valid = {
 describe("createWork", () => {
   it("成功:写入作品 + 标签关联,revalidate 后 redirect 到详情页", async () => {
     const tag = makeTag(ctx.db, "T");
-    await expect(
-      createWork({ ...valid, tagIds: [tag.id] })
-    ).rejects.toThrow("NEXT_REDIRECT:/works/1");
+    await expect(createWork({ ...valid, tagIds: [tag.id] })).rejects.toThrow(
+      "NEXT_REDIRECT:/works/1",
+    );
 
     const rows = ctx.db.select().from(works).all();
     expect(rows).toHaveLength(1);
-    expect(rows[0].title).toBe("新作品");
+    expect(rows[0]!.title).toBe("新作品");
     const links = ctx.db
       .select()
       .from(entity_tags)
-      .where(and(eq(entity_tags.entity_type, "work"), eq(entity_tags.entity_id, rows[0].id)))
+      .where(
+        and(
+          eq(entity_tags.entity_type, "work"),
+          eq(entity_tags.entity_id, rows[0]!.id),
+        ),
+      )
       .all();
     expect(links.map((l) => l.tag_id)).toEqual([tag.id]);
     expect(revalidateMock).toHaveBeenCalledWith("/works");
@@ -77,12 +87,14 @@ describe("createWork", () => {
   it("重复 tagIds 去重:只建一条关联,不触发唯一索引报错", async () => {
     const tag = makeTag(ctx.db, "T");
     await expect(
-      createWork({ ...valid, tagIds: [tag.id, tag.id, tag.id] })
+      createWork({ ...valid, tagIds: [tag.id, tag.id, tag.id] }),
     ).rejects.toThrow("NEXT_REDIRECT:/works/1");
     const links = ctx.db
       .select()
       .from(entity_tags)
-      .where(and(eq(entity_tags.entity_type, "work"), eq(entity_tags.entity_id, 1)))
+      .where(
+        and(eq(entity_tags.entity_type, "work"), eq(entity_tags.entity_id, 1)),
+      )
       .all();
     expect(links.map((l) => l.tag_id)).toEqual([tag.id]);
   });
@@ -96,15 +108,20 @@ describe("updateWork", () => {
     tagEntity(ctx.db, "work", w.id, a.id); // 原本挂 A
 
     await expect(
-      updateWork(w.id, { ...valid, title: "改后标题", tagIds: [b.id] })
+      updateWork(w.id, { ...valid, title: "改后标题", tagIds: [b.id] }),
     ).rejects.toThrow(`NEXT_REDIRECT:/works/${w.id}`);
 
-    const [row] = ctx.db.select().from(works).where(eq(works.id, w.id)).all();
+    const row = ctx.db.select().from(works).where(eq(works.id, w.id)).all()[0]!;
     expect(row.title).toBe("改后标题");
     const links = ctx.db
       .select()
       .from(entity_tags)
-      .where(and(eq(entity_tags.entity_type, "work"), eq(entity_tags.entity_id, w.id)))
+      .where(
+        and(
+          eq(entity_tags.entity_type, "work"),
+          eq(entity_tags.entity_id, w.id),
+        ),
+      )
       .all();
     // A 被删、B 被插。
     expect(links.map((l) => l.tag_id)).toEqual([b.id]);
@@ -120,8 +137,13 @@ describe("updateWork", () => {
       ctx.db
         .select()
         .from(entity_tags)
-        .where(and(eq(entity_tags.entity_type, "work"), eq(entity_tags.entity_id, 9999)))
-        .all()
+        .where(
+          and(
+            eq(entity_tags.entity_type, "work"),
+            eq(entity_tags.entity_id, 9999),
+          ),
+        )
+        .all(),
     ).toHaveLength(0);
     expect(redirectMock).not.toHaveBeenCalled();
   });
@@ -130,12 +152,17 @@ describe("updateWork", () => {
     const w = makeWork(ctx.db, { title: "W" });
     const a = makeTag(ctx.db, "A");
     await expect(
-      updateWork(w.id, { ...valid, title: "改", tagIds: [a.id, a.id] })
+      updateWork(w.id, { ...valid, title: "改", tagIds: [a.id, a.id] }),
     ).rejects.toThrow(`NEXT_REDIRECT:/works/${w.id}`);
     const links = ctx.db
       .select()
       .from(entity_tags)
-      .where(and(eq(entity_tags.entity_type, "work"), eq(entity_tags.entity_id, w.id)))
+      .where(
+        and(
+          eq(entity_tags.entity_type, "work"),
+          eq(entity_tags.entity_id, w.id),
+        ),
+      )
       .all();
     expect(links.map((l) => l.tag_id)).toEqual([a.id]);
   });
@@ -150,17 +177,28 @@ describe("deleteWork", () => {
 
     const res = await deleteWork(w.id);
     expect(res.ok).toBe(true);
-    expect(ctx.db.select().from(works).where(eq(works.id, w.id)).all()).toHaveLength(0);
+    expect(
+      ctx.db.select().from(works).where(eq(works.id, w.id)).all(),
+    ).toHaveLength(0);
     expect(
       ctx.db
         .select()
         .from(entity_tags)
-        .where(and(eq(entity_tags.entity_type, "work"), eq(entity_tags.entity_id, w.id)))
-        .all()
+        .where(
+          and(
+            eq(entity_tags.entity_type, "work"),
+            eq(entity_tags.entity_id, w.id),
+          ),
+        )
+        .all(),
     ).toHaveLength(0);
     // 外键 onDelete:cascade 自动删投稿(证明测试库 foreign_keys=ON)。
     expect(
-      ctx.db.select().from(submissions).where(eq(submissions.work_id, w.id)).all()
+      ctx.db
+        .select()
+        .from(submissions)
+        .where(eq(submissions.work_id, w.id))
+        .all(),
     ).toHaveLength(0);
     expect(revalidateMock).toHaveBeenCalledWith("/works");
   });
@@ -175,7 +213,7 @@ describe("markWorkPublished(P2-9 联动)", () => {
     });
     const res = await markWorkPublished(w.id);
     expect(res.ok).toBe(true);
-    const [row] = ctx.db.select().from(works).where(eq(works.id, w.id)).all();
+    const row = ctx.db.select().from(works).where(eq(works.id, w.id)).all()[0]!;
     expect(row.status).toBe("已发表");
     expect(row.published_at).toBeNull(); // 录用日期 ≠ 发表日期,不联动
     expect(revalidateMock).toHaveBeenCalledWith("/works");

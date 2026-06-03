@@ -40,10 +40,7 @@ import {
 } from "@/lib/actions/submissions";
 import { markWorkPublished } from "@/lib/actions/works";
 import type { Submission } from "@/db/schema";
-import {
-  SUBMISSION_STATUSES,
-  type SubmissionStatus,
-} from "@/lib/constants";
+import { SUBMISSION_STATUSES, type SubmissionStatus } from "@/lib/constants";
 import type { SubmissionInput } from "@/lib/validations";
 import { formatDate } from "@/lib/format";
 
@@ -122,11 +119,15 @@ function SubmissionForm({
   const [journal, setJournal] = useState(submission?.journal ?? "");
   const [round, setRound] = useState(String(submission?.round ?? defaultRound));
   const [status, setStatus] = useState<SubmissionStatus>(
-    submission?.status ?? "在审"
+    submission?.status ?? "在审",
   );
-  const [submittedAt, setSubmittedAt] = useState(submission?.submitted_at ?? "");
+  const [submittedAt, setSubmittedAt] = useState(
+    submission?.submitted_at ?? "",
+  );
   const [decidedAt, setDecidedAt] = useState(submission?.decided_at ?? "");
-  const [reviewNotes, setReviewNotes] = useState(submission?.review_notes ?? "");
+  const [reviewNotes, setReviewNotes] = useState(
+    submission?.review_notes ?? "",
+  );
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -191,7 +192,10 @@ function SubmissionForm({
           <Label htmlFor="sub-status">
             状态 <span className="text-destructive">*</span>
           </Label>
-          <Select value={status} onValueChange={(v) => setStatus(v as SubmissionStatus)}>
+          <Select
+            value={status}
+            onValueChange={(v) => setStatus(v as SubmissionStatus)}
+          >
             <SelectTrigger id="sub-status" className="w-full">
               <SelectValue placeholder="选择状态" />
             </SelectTrigger>
@@ -288,7 +292,8 @@ export function WorkSubmissionsManager({
   // 放在常驻挂载的本组件(而非随对话框卸载的表单)里,确保点击动作时上下文仍在。
   const handleSuggestPublish = () => {
     toast("该投稿已录用 —— 是否将作品标记为「已发表」?", {
-      description: "作品当前状态尚未标为「已发表」。发表日期可稍后在编辑页补填。",
+      description:
+        "作品当前状态尚未标为「已发表」。发表日期可稍后在编辑页补填。",
       duration: 10000,
       action: {
         label: "标为已发表",

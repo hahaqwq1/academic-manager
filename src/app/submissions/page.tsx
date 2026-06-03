@@ -66,7 +66,7 @@ export default async function SubmissionsPage() {
                   "rounded-xl border bg-card px-4 py-3.5 ring-1 ring-foreground/5 transition-colors",
                   s.isOverdue
                     ? "border-destructive/40 bg-destructive/5"
-                    : "border-border"
+                    : "border-border",
                 )}
               >
                 <div className="flex flex-wrap items-center gap-2">
@@ -94,7 +94,9 @@ export default async function SubmissionsPage() {
                   </span>
                   <span>第 {s.round} 轮</span>
                   <span>投于 {formatDate(s.submitted_at)}</span>
-                  <span className={s.isOverdue ? "text-destructive" : undefined}>
+                  <span
+                    className={s.isOverdue ? "text-destructive" : undefined}
+                  >
                     已历 {s.daysElapsed} 天
                   </span>
                 </div>

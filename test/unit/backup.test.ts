@@ -12,7 +12,7 @@ import { pickBackupsToDelete } from "@/lib/backup";
 describe("pickBackupsToDelete", () => {
   it("份数 <= keep 时不删", () => {
     expect(
-      pickBackupsToDelete(["app-2026-01-01.db", "app-2026-01-02.db"], 14)
+      pickBackupsToDelete(["app-2026-01-01.db", "app-2026-01-02.db"], 14),
     ).toEqual([]);
   });
 
@@ -30,7 +30,12 @@ describe("pickBackupsToDelete", () => {
   });
 
   it("忽略非备份文件(其它库文件 / 临时文件不计入也不删)", () => {
-    const files = ["app-2026-01-01.db", "app.db", "readme.md", "app-2026-01-01.db-wal"];
+    const files = [
+      "app-2026-01-01.db",
+      "app.db",
+      "readme.md",
+      "app-2026-01-01.db-wal",
+    ];
     // keep=0:只应删唯一的合规备份,app.db / wal / md 一律不动。
     expect(pickBackupsToDelete(files, 0)).toEqual(["app-2026-01-01.db"]);
   });

@@ -24,16 +24,14 @@ function revalidateTagDependents() {
 
 // SQLite 唯一约束冲突的判定(better-sqlite3 抛出的错误信息含 UNIQUE)。
 function isUniqueViolation(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    /unique/i.test(error.message)
-  );
+  return error instanceof Error && /unique/i.test(error.message);
 }
 
 export async function createTag(nameRaw: string): Promise<TagActionState> {
   const name = (nameRaw ?? "").trim();
   if (name === "") return { ok: false, message: "请输入标签名称" };
-  if (name.length > 50) return { ok: false, message: "标签名称过长(最多 50 字)" };
+  if (name.length > 50)
+    return { ok: false, message: "标签名称过长(最多 50 字)" };
 
   try {
     db.insert(tags).values({ name }).run();
@@ -53,11 +51,12 @@ export async function createTag(nameRaw: string): Promise<TagActionState> {
 
 export async function renameTag(
   id: number,
-  nameRaw: string
+  nameRaw: string,
 ): Promise<TagActionState> {
   const name = (nameRaw ?? "").trim();
   if (name === "") return { ok: false, message: "请输入标签名称" };
-  if (name.length > 50) return { ok: false, message: "标签名称过长(最多 50 字)" };
+  if (name.length > 50)
+    return { ok: false, message: "标签名称过长(最多 50 字)" };
 
   try {
     db.update(tags).set({ name }).where(eq(tags.id, id)).run();

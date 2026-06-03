@@ -8,7 +8,13 @@
 import { eq, and, or, inArray, desc, count } from "drizzle-orm";
 
 import { db } from "@/db";
-import { projects, entity_tags, tags, project_outputs, works } from "@/db/schema";
+import {
+  projects,
+  entity_tags,
+  tags,
+  project_outputs,
+  works,
+} from "@/db/schema";
 import type { Project, Tag } from "@/db/schema";
 import type { WorkBrief } from "@/db/queries/works";
 import type { ProjectLevel, ProjectStatus } from "@/lib/constants";
@@ -58,8 +64,8 @@ function loadTagsForProjects(projectIds: number[]): Map<number, Tag[]> {
     .where(
       and(
         eq(entity_tags.entity_type, "project"),
-        inArray(entity_tags.entity_id, projectIds)
-      )
+        inArray(entity_tags.entity_id, projectIds),
+      ),
     )
     .all();
 
@@ -76,10 +82,11 @@ function loadTagsForProjects(projectIds: number[]): Map<number, Tag[]> {
 
 // 项目列表:筛选 + 分页 + 排序 + 标签填充。
 export async function listProjects(
-  params: ListProjectsParams = {}
+  params: ListProjectsParams = {},
 ): Promise<ListProjectsResult> {
   const page = params.page && params.page > 0 ? params.page : 1;
-  const pageSize = params.pageSize && params.pageSize > 0 ? params.pageSize : 20;
+  const pageSize =
+    params.pageSize && params.pageSize > 0 ? params.pageSize : 20;
 
   const conditions = [];
 
@@ -95,8 +102,8 @@ export async function listProjects(
       or(
         likeContains(projects.title, q),
         likeContains(projects.notes, q),
-        likeContains(projects.grant_no, q)
-      )
+        likeContains(projects.grant_no, q),
+      ),
     );
   }
   if (params.tagId !== undefined) {
@@ -106,19 +113,17 @@ export async function listProjects(
       .where(
         and(
           eq(entity_tags.entity_type, "project"),
-          eq(entity_tags.tag_id, params.tagId)
-        )
+          eq(entity_tags.tag_id, params.tagId),
+        ),
       );
     conditions.push(inArray(projects.id, taggedIds));
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-  const [{ value: total }] = db
-    .select({ value: count() })
-    .from(projects)
-    .where(whereClause)
-    .all();
+  const total =
+    db.select({ value: count() }).from(projects).where(whereClause).all()[0]
+      ?.value ?? 0;
 
   const pageCount = total === 0 ? 0 : Math.ceil(total / pageSize);
 
@@ -144,7 +149,7 @@ export async function listProjects(
 
 // 单条项目 + 标签 + 已挂接成果;不存在返回 null。
 export async function getProjectById(
-  id: number
+  id: number,
 ): Promise<ProjectWithRelations | null> {
   const [project] = db.select().from(projects).where(eq(projects.id, id)).all();
   if (!project) return null;
@@ -156,8 +161,8 @@ export async function getProjectById(
     .where(
       and(
         eq(entity_tags.entity_type, "project"),
-        eq(entity_tags.entity_id, id)
-      )
+        eq(entity_tags.entity_id, id),
+      ),
     )
     .all();
 

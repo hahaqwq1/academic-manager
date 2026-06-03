@@ -19,7 +19,10 @@ const LEVEL_CLASSNAME: Record<ProjectLevel, string> = {
 
 export function ProjectLevelBadge({ level }: { level: ProjectLevel }) {
   return (
-    <Badge variant="outline" className={cn("font-medium", LEVEL_CLASSNAME[level])}>
+    <Badge
+      variant="outline"
+      className={cn("font-medium", LEVEL_CLASSNAME[level])}
+    >
       {level}
     </Badge>
   );
@@ -28,7 +31,10 @@ export function ProjectLevelBadge({ level }: { level: ProjectLevel }) {
 // 角色:主持(突出,主色软底)/ 参与(中性)。
 export function ProjectRoleBadge({ role }: { role: ProjectRole }) {
   return role === "主持" ? (
-    <Badge variant="outline" className="border-primary/20 bg-primary/10 font-medium text-primary">
+    <Badge
+      variant="outline"
+      className="border-primary/20 bg-primary/10 font-medium text-primary"
+    >
       主持
     </Badge>
   ) : (
@@ -50,7 +56,10 @@ const STATUS_CLASSNAME: Record<ProjectStatus, string> = {
 
 export function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
   return (
-    <Badge variant="outline" className={cn("font-medium", STATUS_CLASSNAME[status])}>
+    <Badge
+      variant="outline"
+      className={cn("font-medium", STATUS_CLASSNAME[status])}
+    >
       {status}
     </Badge>
   );

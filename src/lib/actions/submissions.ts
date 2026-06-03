@@ -24,7 +24,10 @@ export type SubmissionActionState = {
 };
 
 // 是否应提示联动作品状态:投稿状态为「录用」且作品当前不是「已发表」。
-function shouldSuggestPublish(workId: number, submissionStatus: string): boolean {
+function shouldSuggestPublish(
+  workId: number,
+  submissionStatus: string,
+): boolean {
   if (submissionStatus !== "录用") return false;
   const [work] = db
     .select({ status: works.status })
@@ -35,7 +38,7 @@ function shouldSuggestPublish(workId: number, submissionStatus: string): boolean
 }
 
 function toFieldErrors(
-  issues: { path: PropertyKey[]; message: string }[]
+  issues: { path: PropertyKey[]; message: string }[],
 ): Record<string, string> {
   const errors: Record<string, string> = {};
   for (const issue of issues) {
@@ -57,7 +60,7 @@ function revalidateAll(workId: number) {
 // 新增一条投稿轮次。
 export async function createSubmission(
   workId: number,
-  input: unknown
+  input: unknown,
 ): Promise<SubmissionActionState> {
   const parsed = submissionInputSchema.safeParse(input);
   if (!parsed.success) {
@@ -89,14 +92,17 @@ export async function createSubmission(
   }
 
   revalidateAll(workId);
-  return { ok: true, suggestPublish: shouldSuggestPublish(workId, data.status) };
+  return {
+    ok: true,
+    suggestPublish: shouldSuggestPublish(workId, data.status),
+  };
 }
 
 // 更新一条投稿轮次。
 export async function updateSubmission(
   workId: number,
   submissionId: number,
-  input: unknown
+  input: unknown,
 ): Promise<SubmissionActionState> {
   const parsed = submissionInputSchema.safeParse(input);
   if (!parsed.success) {
@@ -121,7 +127,7 @@ export async function updateSubmission(
         review_notes: data.review_notes,
       })
       .where(
-        and(eq(submissions.id, submissionId), eq(submissions.work_id, workId))
+        and(eq(submissions.id, submissionId), eq(submissions.work_id, workId)),
       )
       .run();
     // 归属校验:workId 不匹配则 0 行变更,不应据此提示联动。
@@ -143,12 +149,12 @@ export async function updateSubmission(
 // 删除一条投稿轮次。
 export async function deleteSubmission(
   workId: number,
-  submissionId: number
+  submissionId: number,
 ): Promise<{ ok: boolean; message?: string }> {
   try {
     db.delete(submissions)
       .where(
-        and(eq(submissions.id, submissionId), eq(submissions.work_id, workId))
+        and(eq(submissions.id, submissionId), eq(submissions.work_id, workId)),
       )
       .run();
   } catch (error) {

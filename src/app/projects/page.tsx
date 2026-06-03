@@ -52,7 +52,9 @@ function parsePositiveInt(value: string | undefined): number | undefined {
   return Number.isInteger(n) && n > 0 ? n : undefined;
 }
 
-export default async function ProjectsPage({ searchParams }: ProjectsPageProps) {
+export default async function ProjectsPage({
+  searchParams,
+}: ProjectsPageProps) {
   const sp = await searchParams;
 
   const q = sp.q?.trim() ? sp.q.trim() : undefined;
@@ -161,7 +163,9 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
               </div>
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">共 {result.total} 条</p>
+            <p className="text-xs text-muted-foreground">
+              共 {result.total} 条
+            </p>
           )}
         </div>
       )}

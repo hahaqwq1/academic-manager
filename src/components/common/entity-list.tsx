@@ -48,7 +48,7 @@ export function EntityList<T>({
   const [optimisticItems, removeOptimistic] = useOptimistic(
     items,
     (current: T[], removedId: number) =>
-      current.filter((item) => getId(item) !== removedId)
+      current.filter((item) => getId(item) !== removedId),
   );
 
   // 删除:乐观移除 → 调 server action → 反馈。

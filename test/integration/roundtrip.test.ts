@@ -17,7 +17,7 @@ vi.mock("@/db", () => ({
 const redirectMock = vi.hoisted(() =>
   vi.fn((url: string) => {
     throw new Error(`NEXT_REDIRECT:${url}`);
-  })
+  }),
 );
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -55,33 +55,60 @@ describe("作品全生命周期闭环", () => {
     // 2) 建作品并挂上 AI 标签。
     let workId = -1;
     try {
-      await createWork({ type: "paper", title: "论 AI 治理", status: "已完成", tagIds: [AI] });
+      await createWork({
+        type: "paper",
+        title: "论 AI 治理",
+        status: "已完成",
+        tagIds: [AI],
+      });
     } catch (err) {
       workId = redirectedId(err);
     }
     expect(workId).toBeGreaterThan(0);
 
     // 3) 按 AI 标签筛选应命中;按治理标签不命中。
-    expect((await listWorks({ tagId: AI })).items.map((w) => w.id)).toEqual([workId]);
+    expect((await listWorks({ tagId: AI })).items.map((w) => w.id)).toEqual([
+      workId,
+    ]);
     expect((await listWorks({ tagId: ZHILI })).total).toBe(0);
 
     // 给作品加一条投稿,稍后验证级联删除。
-    expect((await createSubmission(workId, { journal: "刊", round: 1, status: "在审", submitted_at: "2025-01-01" })).ok).toBe(true);
+    expect(
+      (
+        await createSubmission(workId, {
+          journal: "刊",
+          round: 1,
+          status: "在审",
+          submitted_at: "2025-01-01",
+        })
+      ).ok,
+    ).toBe(true);
 
     // 4) 改作品:标签从 AI 换成 治理。
     try {
-      await updateWork(workId, { type: "paper", title: "论 AI 治理(修订)", status: "投稿中", tagIds: [ZHILI] });
+      await updateWork(workId, {
+        type: "paper",
+        title: "论 AI 治理(修订)",
+        status: "投稿中",
+        tagIds: [ZHILI],
+      });
     } catch {
       /* redirect 哨兵,忽略 */
     }
     expect((await listWorks({ tagId: AI })).total).toBe(0); // 不再挂 AI
-    expect((await listWorks({ tagId: ZHILI })).items.map((w) => w.id)).toEqual([workId]);
+    expect((await listWorks({ tagId: ZHILI })).items.map((w) => w.id)).toEqual([
+      workId,
+    ]);
 
     // 5) 删作品:投稿经外键级联一并删除。
     expect((await deleteWork(workId)).ok).toBe(true);
     expect((await listWorks()).total).toBe(0);
     expect(
-      ctx.db.select().from(submissions).where(eq(submissions.work_id, workId)).all()
+      ctx.db
+        .select()
+        .from(submissions)
+        .where(eq(submissions.work_id, workId))
+        .all(),
     ).toHaveLength(0);
   });
 });

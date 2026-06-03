@@ -24,10 +24,7 @@ export default async function EditWorkPage({
 }) {
   const { id } = await params;
   const workId = Number(id);
-  const [work, tags] = await Promise.all([
-    getWorkById(workId),
-    listAllTags(),
-  ]);
+  const [work, tags] = await Promise.all([getWorkById(workId), listAllTags()]);
   if (!work) notFound();
 
   // 表单默认值:作品各列 + 当前已选标签 id 列表。
@@ -42,6 +39,8 @@ export default async function EditWorkPage({
     notes: work.notes,
     file_path: work.file_path,
     published_at: work.published_at,
+    doi: work.doi,
+    journal: work.journal,
     tagIds: work.tags.map((tag) => tag.id),
   };
 

@@ -22,7 +22,9 @@ export function AppSidebar() {
       <nav className="flex-1 px-3 py-2">
         <SidebarNav />
       </nav>
-      <div className="px-5 py-3 text-xs text-muted-foreground">本地运行 · 单人使用</div>
+      <div className="px-5 py-3 text-xs text-muted-foreground">
+        本地运行 · 单人使用
+      </div>
     </aside>
   );
 }

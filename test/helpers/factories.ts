@@ -36,12 +36,12 @@ export function makeWork(db: TestDb, overrides: Partial<NewWork> = {}): Work {
     })
     .returning()
     .all();
-  return row;
+  return row!;
 }
 
 export function makeProject(
   db: TestDb,
-  overrides: Partial<NewProject> = {}
+  overrides: Partial<NewProject> = {},
 ): Project {
   const [row] = db
     .insert(projects)
@@ -54,13 +54,13 @@ export function makeProject(
     })
     .returning()
     .all();
-  return row;
+  return row!;
 }
 
 export function makeSubmission(
   db: TestDb,
   workId: number,
-  overrides: Partial<NewSubmission> = {}
+  overrides: Partial<NewSubmission> = {},
 ): Submission {
   const [row] = db
     .insert(submissions)
@@ -74,12 +74,12 @@ export function makeSubmission(
     })
     .returning()
     .all();
-  return row;
+  return row!;
 }
 
 export function makeTag(db: TestDb, name: string): Tag {
   const [row] = db.insert(tags).values({ name }).returning().all();
-  return row;
+  return row!;
 }
 
 // 给某实体(work / project)打标签。
@@ -87,26 +87,26 @@ export function tagEntity(
   db: TestDb,
   entityType: "work" | "project",
   entityId: number,
-  tagId: number
+  tagId: number,
 ): EntityTag {
   const [row] = db
     .insert(entity_tags)
     .values({ entity_type: entityType, entity_id: entityId, tag_id: tagId })
     .returning()
     .all();
-  return row;
+  return row!;
 }
 
 // 把作品挂接到项目。
 export function linkOutput(
   db: TestDb,
   projectId: number,
-  workId: number
+  workId: number,
 ): ProjectOutput {
   const [row] = db
     .insert(project_outputs)
     .values({ project_id: projectId, work_id: workId })
     .returning()
     .all();
-  return row;
+  return row!;
 }

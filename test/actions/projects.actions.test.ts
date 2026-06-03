@@ -5,7 +5,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { eq, and } from "drizzle-orm";
 
 import { createTestContext, type TestDb } from "../helpers/test-db";
-import { makeProject, makeWork, makeTag, tagEntity, linkOutput } from "../helpers/factories";
+import {
+  makeProject,
+  makeWork,
+  makeTag,
+  tagEntity,
+  linkOutput,
+} from "../helpers/factories";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -16,7 +22,7 @@ vi.mock("@/db", () => ({
 const redirectMock = vi.hoisted(() =>
   vi.fn((url: string) => {
     throw new Error(`NEXT_REDIRECT:${url}`);
-  })
+  }),
 );
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 const revalidateMock = vi.hoisted(() => vi.fn());
@@ -40,23 +46,33 @@ beforeEach(() => {
 });
 afterEach(() => ctx.sqlite.close());
 
-const valid = { title: "新项目", level: "省部级", role: "主持", status: "已立项" };
+const valid = {
+  title: "新项目",
+  level: "省部级",
+  role: "主持",
+  status: "已立项",
+};
 
 describe("createProject", () => {
   it("成功:写入项目 + 标签,redirect 到详情页", async () => {
     const tag = makeTag(ctx.db, "T");
     await expect(createProject({ ...valid, tagIds: [tag.id] })).rejects.toThrow(
-      "NEXT_REDIRECT:/projects/1"
+      "NEXT_REDIRECT:/projects/1",
     );
     const rows = ctx.db.select().from(projects).all();
     expect(rows).toHaveLength(1);
-    expect(rows[0].title).toBe("新项目");
+    expect(rows[0]!.title).toBe("新项目");
     expect(
       ctx.db
         .select()
         .from(entity_tags)
-        .where(and(eq(entity_tags.entity_type, "project"), eq(entity_tags.entity_id, rows[0].id)))
-        .all()
+        .where(
+          and(
+            eq(entity_tags.entity_type, "project"),
+            eq(entity_tags.entity_id, rows[0]!.id),
+          ),
+        )
+        .all(),
     ).toHaveLength(1);
   });
 
@@ -69,14 +85,19 @@ describe("createProject", () => {
   it("重复 tagIds 去重:只建一条关联,不触发唯一索引报错", async () => {
     const tag = makeTag(ctx.db, "T");
     await expect(
-      createProject({ ...valid, tagIds: [tag.id, tag.id, tag.id] })
+      createProject({ ...valid, tagIds: [tag.id, tag.id, tag.id] }),
     ).rejects.toThrow("NEXT_REDIRECT:/projects/1");
     expect(
       ctx.db
         .select()
         .from(entity_tags)
-        .where(and(eq(entity_tags.entity_type, "project"), eq(entity_tags.entity_id, 1)))
-        .all()
+        .where(
+          and(
+            eq(entity_tags.entity_type, "project"),
+            eq(entity_tags.entity_id, 1),
+          ),
+        )
+        .all(),
     ).toHaveLength(1);
   });
 });
@@ -88,14 +109,23 @@ describe("updateProject", () => {
     const b = makeTag(ctx.db, "B");
     tagEntity(ctx.db, "project", p.id, a.id);
     await expect(
-      updateProject(p.id, { ...valid, title: "改", tagIds: [b.id] })
+      updateProject(p.id, { ...valid, title: "改", tagIds: [b.id] }),
     ).rejects.toThrow(`NEXT_REDIRECT:/projects/${p.id}`);
-    const [row] = ctx.db.select().from(projects).where(eq(projects.id, p.id)).all();
+    const row = ctx.db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, p.id))
+      .all()[0]!;
     expect(row.title).toBe("改");
     const links = ctx.db
       .select()
       .from(entity_tags)
-      .where(and(eq(entity_tags.entity_type, "project"), eq(entity_tags.entity_id, p.id)))
+      .where(
+        and(
+          eq(entity_tags.entity_type, "project"),
+          eq(entity_tags.entity_id, p.id),
+        ),
+      )
       .all();
     expect(links.map((l) => l.tag_id)).toEqual([b.id]);
   });
@@ -109,8 +139,13 @@ describe("updateProject", () => {
       ctx.db
         .select()
         .from(entity_tags)
-        .where(and(eq(entity_tags.entity_type, "project"), eq(entity_tags.entity_id, 9999)))
-        .all()
+        .where(
+          and(
+            eq(entity_tags.entity_type, "project"),
+            eq(entity_tags.entity_id, 9999),
+          ),
+        )
+        .all(),
     ).toHaveLength(0);
     expect(redirectMock).not.toHaveBeenCalled();
   });
@@ -119,12 +154,17 @@ describe("updateProject", () => {
     const p = makeProject(ctx.db, { title: "P" });
     const a = makeTag(ctx.db, "A");
     await expect(
-      updateProject(p.id, { ...valid, title: "改", tagIds: [a.id, a.id] })
+      updateProject(p.id, { ...valid, title: "改", tagIds: [a.id, a.id] }),
     ).rejects.toThrow(`NEXT_REDIRECT:/projects/${p.id}`);
     const links = ctx.db
       .select()
       .from(entity_tags)
-      .where(and(eq(entity_tags.entity_type, "project"), eq(entity_tags.entity_id, p.id)))
+      .where(
+        and(
+          eq(entity_tags.entity_type, "project"),
+          eq(entity_tags.entity_id, p.id),
+        ),
+      )
       .all();
     expect(links.map((l) => l.tag_id)).toEqual([a.id]);
   });
@@ -139,9 +179,15 @@ describe("deleteProject", () => {
     linkOutput(ctx.db, p.id, w.id);
     const res = await deleteProject(p.id);
     expect(res.ok).toBe(true);
-    expect(ctx.db.select().from(projects).where(eq(projects.id, p.id)).all()).toHaveLength(0);
     expect(
-      ctx.db.select().from(project_outputs).where(eq(project_outputs.project_id, p.id)).all()
+      ctx.db.select().from(projects).where(eq(projects.id, p.id)).all(),
+    ).toHaveLength(0);
+    expect(
+      ctx.db
+        .select()
+        .from(project_outputs)
+        .where(eq(project_outputs.project_id, p.id))
+        .all(),
     ).toHaveLength(0);
   });
 });
@@ -153,12 +199,20 @@ describe("linkProjectOutput / unlinkProjectOutput", () => {
     expect((await linkProjectOutput(p.id, w.id)).ok).toBe(true);
     expect((await linkProjectOutput(p.id, w.id)).ok).toBe(true); // 重复:onConflictDoNothing
     expect(
-      ctx.db.select().from(project_outputs).where(eq(project_outputs.project_id, p.id)).all()
+      ctx.db
+        .select()
+        .from(project_outputs)
+        .where(eq(project_outputs.project_id, p.id))
+        .all(),
     ).toHaveLength(1);
 
     expect((await unlinkProjectOutput(p.id, w.id)).ok).toBe(true);
     expect(
-      ctx.db.select().from(project_outputs).where(eq(project_outputs.project_id, p.id)).all()
+      ctx.db
+        .select()
+        .from(project_outputs)
+        .where(eq(project_outputs.project_id, p.id))
+        .all(),
     ).toHaveLength(0);
   });
 });

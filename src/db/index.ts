@@ -20,7 +20,7 @@ function createConn() {
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       throw new Error(
-        `无法创建数据目录 ${DATA_DIR}(${reason})。请确认 DATA_DIR 指向一个可写位置。`
+        `无法创建数据目录 ${DATA_DIR}(${reason})。请确认 DATA_DIR 指向一个可写位置。`,
       );
     }
   }

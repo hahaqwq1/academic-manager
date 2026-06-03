@@ -37,6 +37,8 @@ export default async function EditProjectPage({
     status: project.status,
     grant_no: project.grant_no,
     funding: project.funding,
+    funding_amount: project.funding_amount,
+    funding_currency: project.funding_currency,
     start_date: project.start_date,
     end_date: project.end_date,
     notes: project.notes,

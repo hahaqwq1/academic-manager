@@ -67,7 +67,9 @@ export default async function TagsPage({ searchParams }: TagsPageProps) {
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* 作品 */}
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">作品</p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    作品
+                  </p>
                   {entities.works.length === 0 ? (
                     <p className="text-sm text-muted-foreground">—</p>
                   ) : (
@@ -93,7 +95,9 @@ export default async function TagsPage({ searchParams }: TagsPageProps) {
 
                 {/* 项目 */}
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">项目</p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    项目
+                  </p>
                   {entities.projects.length === 0 ? (
                     <p className="text-sm text-muted-foreground">—</p>
                   ) : (

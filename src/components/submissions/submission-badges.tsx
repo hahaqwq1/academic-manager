@@ -15,9 +15,16 @@ const STATUS_CLASSNAME: Record<SubmissionStatus, string> = {
   已撤稿: "bg-muted text-muted-foreground border-border",
 };
 
-export function SubmissionStatusBadge({ status }: { status: SubmissionStatus }) {
+export function SubmissionStatusBadge({
+  status,
+}: {
+  status: SubmissionStatus;
+}) {
   return (
-    <Badge variant="outline" className={cn("font-medium", STATUS_CLASSNAME[status])}>
+    <Badge
+      variant="outline"
+      className={cn("font-medium", STATUS_CLASSNAME[status])}
+    >
       {status}
     </Badge>
   );

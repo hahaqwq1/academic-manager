@@ -63,7 +63,9 @@ export function ConfirmDialog({
           ) : null}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>{cancelText}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isPending}>
+            {cancelText}
+          </AlertDialogCancel>
           <AlertDialogAction
             variant={destructive ? "destructive" : "default"}
             disabled={isPending}

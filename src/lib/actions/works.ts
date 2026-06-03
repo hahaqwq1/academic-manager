@@ -25,7 +25,7 @@ export type WorkActionState = {
 
 // 把 zod 的 issues 扁平化为「字段名 → 首条消息」的 map。
 function toFieldErrors(
-  issues: { path: PropertyKey[]; message: string }[]
+  issues: { path: PropertyKey[]; message: string }[],
 ): Record<string, string> {
   const errors: Record<string, string> = {};
   for (const issue of issues) {
@@ -71,9 +71,12 @@ export async function createWork(input: unknown): Promise<WorkActionState> {
           notes: data.notes,
           file_path: data.file_path,
           published_at: data.published_at,
+          doi: data.doi,
+          journal: data.journal,
         })
         .returning({ id: works.id })
         .all();
+      if (!row) throw new Error("作品插入后未返回行");
 
       if (uniqueTagIds.length > 0) {
         tx.insert(entity_tags)
@@ -82,7 +85,7 @@ export async function createWork(input: unknown): Promise<WorkActionState> {
               entity_type: "work" as const,
               entity_id: row.id,
               tag_id: tagId,
-            }))
+            })),
           )
           .run();
       }
@@ -104,7 +107,7 @@ export async function createWork(input: unknown): Promise<WorkActionState> {
 // 编辑作品:校验 → 更新 works → 同步标签(先删后插)→ 跳转详情页。
 export async function updateWork(
   id: number,
-  input: unknown
+  input: unknown,
 ): Promise<WorkActionState> {
   const parsed = workInputSchema.safeParse(input);
   if (!parsed.success) {
@@ -133,6 +136,8 @@ export async function updateWork(
           notes: data.notes,
           file_path: data.file_path,
           published_at: data.published_at,
+          doi: data.doi,
+          journal: data.journal,
         })
         .where(eq(works.id, id))
         .run();
@@ -147,8 +152,8 @@ export async function updateWork(
         .where(
           and(
             eq(entity_tags.entity_type, "work"),
-            eq(entity_tags.entity_id, id)
-          )
+            eq(entity_tags.entity_id, id),
+          ),
         )
         .run();
 
@@ -159,7 +164,7 @@ export async function updateWork(
               entity_type: "work" as const,
               entity_id: id,
               tag_id: tagId,
-            }))
+            })),
           )
           .run();
       }
@@ -180,7 +185,7 @@ export async function updateWork(
 // 删除作品:事务内先删多态标签关联,再删 works 本体。
 // submissions / project_outputs 由外键级联自动删除。不在此处 redirect,导航由调用方决定。
 export async function deleteWork(
-  id: number
+  id: number,
 ): Promise<{ ok: boolean; message?: string }> {
   try {
     db.transaction((tx) => {
@@ -189,8 +194,8 @@ export async function deleteWork(
         .where(
           and(
             eq(entity_tags.entity_type, "work"),
-            eq(entity_tags.entity_id, id)
-          )
+            eq(entity_tags.entity_id, id),
+          ),
         )
         .run();
 
@@ -211,7 +216,7 @@ export async function deleteWork(
 // 刻意只改 status,不动 published_at:录用日期 ≠ 发表日期,年度发表数依赖真实发表日期,
 // 故发表日期仍由用户在编辑页按实际填写,避免静默写入错误日期污染看板统计。
 export async function markWorkPublished(
-  id: number
+  id: number,
 ): Promise<{ ok: boolean; message?: string }> {
   let changed = false;
   try {

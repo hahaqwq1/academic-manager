@@ -40,7 +40,7 @@ export async function runStartupBackup(): Promise<void> {
     const integrity = sqlite.pragma("integrity_check", { simple: true });
     if (integrity !== "ok") {
       console.warn(
-        `[backup] ⚠️ 数据库完整性自检未通过:${String(integrity)}。已跳过本次备份,以免用损坏快照覆盖既有良好备份。请尽快从 ${path.join(DATA_DIR, "backups")} 下最近一份恢复。`
+        `[backup] ⚠️ 数据库完整性自检未通过:${String(integrity)}。已跳过本次备份,以免用损坏快照覆盖既有良好备份。请尽快从 ${path.join(DATA_DIR, "backups")} 下最近一份恢复。`,
       );
       return;
     }
@@ -64,11 +64,11 @@ export async function runStartupBackup(): Promise<void> {
       }
     }
     console.log(
-      `[backup] 已生成每日备份 ${path.basename(dest)}(保留最近 ${KEEP} 份)。`
+      `[backup] 已生成每日备份 ${path.basename(dest)}(保留最近 ${KEEP} 份)。`,
     );
   } catch (error) {
     console.warn(
-      `[backup] 备份失败(不影响应用运行):${error instanceof Error ? error.message : String(error)}`
+      `[backup] 备份失败(不影响应用运行):${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }

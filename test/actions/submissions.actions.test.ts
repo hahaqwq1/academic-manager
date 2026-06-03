@@ -33,29 +33,51 @@ beforeEach(() => {
 });
 afterEach(() => ctx.sqlite.close());
 
-const valid = { journal: "民族研究", round: 1, status: "在审", submitted_at: "2025-01-01" };
+const valid = {
+  journal: "民族研究",
+  round: 1,
+  status: "在审",
+  submitted_at: "2025-01-01",
+};
 
 describe("createSubmission", () => {
   it("成功写入一条轮次", async () => {
     const w = makeWork(ctx.db, { title: "W" });
     const res = await createSubmission(w.id, valid);
     expect(res.ok).toBe(true);
-    expect(ctx.db.select().from(submissions).where(eq(submissions.work_id, w.id)).all()).toHaveLength(1);
+    expect(
+      ctx.db
+        .select()
+        .from(submissions)
+        .where(eq(submissions.work_id, w.id))
+        .all(),
+    ).toHaveLength(1);
   });
 
   it("同作品重复轮次被唯一约束拒(返回含 UNIQUE 的错误)", async () => {
     const w = makeWork(ctx.db, { title: "W" });
-    expect((await createSubmission(w.id, { ...valid, round: 1 })).ok).toBe(true);
-    const dup = await createSubmission(w.id, { ...valid, round: 1, journal: "另一刊" });
+    expect((await createSubmission(w.id, { ...valid, round: 1 })).ok).toBe(
+      true,
+    );
+    const dup = await createSubmission(w.id, {
+      ...valid,
+      round: 1,
+      journal: "另一刊",
+    });
     expect(dup.ok).toBe(false);
     expect(dup.message).toMatch(/UNIQUE/i);
     // 第 2 轮可正常录入。
-    expect((await createSubmission(w.id, { ...valid, round: 2 })).ok).toBe(true);
+    expect((await createSubmission(w.id, { ...valid, round: 2 })).ok).toBe(
+      true,
+    );
   });
 
   it("校验失败返回错误对象", async () => {
     const w = makeWork(ctx.db, { title: "W" });
-    const res = await createSubmission(w.id, { ...valid, submitted_at: "2025-02-30" });
+    const res = await createSubmission(w.id, {
+      ...valid,
+      submitted_at: "2025-02-30",
+    });
     expect(res.ok).toBe(false);
     expect(res.errors?.submitted_at).toBeTruthy();
   });
@@ -65,9 +87,16 @@ describe("updateSubmission 归属校验", () => {
   it("workId 匹配:正常更新", async () => {
     const w = makeWork(ctx.db, { title: "W" });
     const s = makeSubmission(ctx.db, w.id, { round: 1, journal: "原刊" });
-    const res = await updateSubmission(w.id, s.id, { ...valid, journal: "改后刊" });
+    const res = await updateSubmission(w.id, s.id, {
+      ...valid,
+      journal: "改后刊",
+    });
     expect(res.ok).toBe(true);
-    const [row] = ctx.db.select().from(submissions).where(eq(submissions.id, s.id)).all();
+    const row = ctx.db
+      .select()
+      .from(submissions)
+      .where(eq(submissions.id, s.id))
+      .all()[0]!;
     expect(row.journal).toBe("改后刊");
   });
 
@@ -75,9 +104,16 @@ describe("updateSubmission 归属校验", () => {
     const w1 = makeWork(ctx.db, { title: "W1" });
     const w2 = makeWork(ctx.db, { title: "W2" });
     const s = makeSubmission(ctx.db, w1.id, { round: 1, journal: "原刊" });
-    const res = await updateSubmission(w2.id, s.id, { ...valid, journal: "越权改" });
+    const res = await updateSubmission(w2.id, s.id, {
+      ...valid,
+      journal: "越权改",
+    });
     expect(res.ok).toBe(true); // 动作不报错
-    const [row] = ctx.db.select().from(submissions).where(eq(submissions.id, s.id)).all();
+    const row = ctx.db
+      .select()
+      .from(submissions)
+      .where(eq(submissions.id, s.id))
+      .all()[0]!;
     expect(row.journal).toBe("原刊"); // 但未被改动
   });
 });
@@ -89,14 +125,18 @@ describe("deleteSubmission 归属校验", () => {
     const s = makeSubmission(ctx.db, w1.id, { round: 1 });
     const res = await deleteSubmission(w2.id, s.id);
     expect(res.ok).toBe(true);
-    expect(ctx.db.select().from(submissions).where(eq(submissions.id, s.id)).all()).toHaveLength(1);
+    expect(
+      ctx.db.select().from(submissions).where(eq(submissions.id, s.id)).all(),
+    ).toHaveLength(1);
   });
 
   it("workId 匹配:正常删除", async () => {
     const w = makeWork(ctx.db, { title: "W" });
     const s = makeSubmission(ctx.db, w.id, { round: 1 });
     expect((await deleteSubmission(w.id, s.id)).ok).toBe(true);
-    expect(ctx.db.select().from(submissions).where(eq(submissions.id, s.id)).all()).toHaveLength(0);
+    expect(
+      ctx.db.select().from(submissions).where(eq(submissions.id, s.id)).all(),
+    ).toHaveLength(0);
   });
 });
 
@@ -125,7 +165,10 @@ describe("suggestPublish 录用联动提示(P2-9)", () => {
   it("updateSubmission 改为录用 → 提示", async () => {
     const w = makeWork(ctx.db, { title: "W", status: "投稿中" });
     const s = makeSubmission(ctx.db, w.id, { round: 1, status: "在审" });
-    const res = await updateSubmission(w.id, s.id, { ...valid, status: "录用" });
+    const res = await updateSubmission(w.id, s.id, {
+      ...valid,
+      status: "录用",
+    });
     expect(res.ok).toBe(true);
     expect(res.suggestPublish).toBe(true);
   });
@@ -134,7 +177,10 @@ describe("suggestPublish 录用联动提示(P2-9)", () => {
     const w1 = makeWork(ctx.db, { title: "W1", status: "投稿中" });
     const w2 = makeWork(ctx.db, { title: "W2", status: "投稿中" });
     const s = makeSubmission(ctx.db, w1.id, { round: 1, status: "在审" });
-    const res = await updateSubmission(w2.id, s.id, { ...valid, status: "录用" });
+    const res = await updateSubmission(w2.id, s.id, {
+      ...valid,
+      status: "录用",
+    });
     expect(res.ok).toBe(true);
     expect(res.suggestPublish).toBeFalsy();
   });

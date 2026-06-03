@@ -101,11 +101,7 @@ export default async function ProjectDetailPage({
               value={display(project.funding)}
               empty={display(project.funding) === EMPTY}
             />
-            <Field
-              label="起止日期"
-              value={period}
-              empty={period === EMPTY}
-            />
+            <Field label="起止日期" value={period} empty={period === EMPTY} />
           </dl>
 
           <Separator className="my-2" />
@@ -151,8 +147,14 @@ export default async function ProjectDetailPage({
           <Separator className="my-2" />
 
           <dl className="divide-y divide-border">
-            <Field label="创建时间" value={formatDateTime(project.created_at)} />
-            <Field label="更新时间" value={formatDateTime(project.updated_at)} />
+            <Field
+              label="创建时间"
+              value={formatDateTime(project.created_at)}
+            />
+            <Field
+              label="更新时间"
+              value={formatDateTime(project.updated_at)}
+            />
           </dl>
         </CardContent>
 

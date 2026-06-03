@@ -51,21 +51,48 @@ describe("listSubmissionsForWork", () => {
 describe("listPendingSubmissions", () => {
   it("仅纳入「在审且未决」,排除已决/非在审", async () => {
     const w = makeWork(ctx.db, { title: "W" });
-    makeSubmission(ctx.db, w.id, { round: 1, status: "在审", submitted_at: "2024-04-15", decided_at: null });
-    makeSubmission(ctx.db, w.id, { round: 2, status: "在审", submitted_at: "2024-04-15", decided_at: "2024-05-01" }); // 已决,排除
-    makeSubmission(ctx.db, w.id, { round: 3, status: "录用", submitted_at: "2024-04-15", decided_at: null }); // 非在审,排除
+    makeSubmission(ctx.db, w.id, {
+      round: 1,
+      status: "在审",
+      submitted_at: "2024-04-15",
+      decided_at: null,
+    });
+    makeSubmission(ctx.db, w.id, {
+      round: 2,
+      status: "在审",
+      submitted_at: "2024-04-15",
+      decided_at: "2024-05-01",
+    }); // 已决,排除
+    makeSubmission(ctx.db, w.id, {
+      round: 3,
+      status: "录用",
+      submitted_at: "2024-04-15",
+      decided_at: null,
+    }); // 非在审,排除
     const list = await listPendingSubmissions();
     expect(list).toHaveLength(1);
-    expect(list[0].round).toBe(1);
-    expect(list[0].work_title).toBe("W"); // 联表带出作品标题
+    expect(list[0]!.round).toBe(1);
+    expect(list[0]!.work_title).toBe("W"); // 联表带出作品标题
   });
 
   it("daysElapsed 与 isOverdue(>90 严格);排序:超期优先,其次天数倒序", async () => {
     const w = makeWork(ctx.db, { title: "W" });
     // 今天 2024-05-15。
-    makeSubmission(ctx.db, w.id, { round: 1, submitted_at: "2024-01-01", journal: "超期135" }); // 135 天,超期
-    makeSubmission(ctx.db, w.id, { round: 2, submitted_at: "2024-04-15", journal: "正常30" }); // 30 天
-    makeSubmission(ctx.db, w.id, { round: 3, submitted_at: "2024-05-14", journal: "正常1" }); // 1 天
+    makeSubmission(ctx.db, w.id, {
+      round: 1,
+      submitted_at: "2024-01-01",
+      journal: "超期135",
+    }); // 135 天,超期
+    makeSubmission(ctx.db, w.id, {
+      round: 2,
+      submitted_at: "2024-04-15",
+      journal: "正常30",
+    }); // 30 天
+    makeSubmission(ctx.db, w.id, {
+      round: 3,
+      submitted_at: "2024-05-14",
+      journal: "正常1",
+    }); // 1 天
     const list = await listPendingSubmissions();
     expect(list.map((s) => s.journal)).toEqual(["超期135", "正常30", "正常1"]);
     expect(list[0]).toMatchObject({ daysElapsed: 135, isOverdue: true });
@@ -75,24 +102,46 @@ describe("listPendingSubmissions", () => {
 
   it("超期边界:恰好 90 天不超期,91 天超期", async () => {
     const w = makeWork(ctx.db, { title: "W" });
-    makeSubmission(ctx.db, w.id, { round: 1, submitted_at: "2024-02-15", journal: "d90" }); // 90 天
-    makeSubmission(ctx.db, w.id, { round: 2, submitted_at: "2024-02-14", journal: "d91" }); // 91 天
+    makeSubmission(ctx.db, w.id, {
+      round: 1,
+      submitted_at: "2024-02-15",
+      journal: "d90",
+    }); // 90 天
+    makeSubmission(ctx.db, w.id, {
+      round: 2,
+      submitted_at: "2024-02-14",
+      journal: "d91",
+    }); // 91 天
     const byJournal = Object.fromEntries(
-      (await listPendingSubmissions()).map((s) => [s.journal, s])
+      (await listPendingSubmissions()).map((s) => [s.journal, s]),
     );
-    expect(byJournal["d90"]).toMatchObject({ daysElapsed: 90, isOverdue: false });
-    expect(byJournal["d91"]).toMatchObject({ daysElapsed: 91, isOverdue: true });
+    expect(byJournal["d90"]).toMatchObject({
+      daysElapsed: 90,
+      isOverdue: false,
+    });
+    expect(byJournal["d91"]).toMatchObject({
+      daysElapsed: 91,
+      isOverdue: true,
+    });
   });
 
   it("未来投稿日 daysElapsed 截断为 0;非法日期记 0", async () => {
     const w = makeWork(ctx.db, { title: "W" });
-    makeSubmission(ctx.db, w.id, { round: 1, submitted_at: "2024-12-31", journal: "future" });
-    makeSubmission(ctx.db, w.id, { round: 2, submitted_at: "garbage", journal: "bad" });
+    makeSubmission(ctx.db, w.id, {
+      round: 1,
+      submitted_at: "2024-12-31",
+      journal: "future",
+    });
+    makeSubmission(ctx.db, w.id, {
+      round: 2,
+      submitted_at: "garbage",
+      journal: "bad",
+    });
     const byJournal = Object.fromEntries(
-      (await listPendingSubmissions()).map((s) => [s.journal, s])
+      (await listPendingSubmissions()).map((s) => [s.journal, s]),
     );
-    expect(byJournal["future"].daysElapsed).toBe(0);
-    expect(byJournal["bad"].daysElapsed).toBe(0);
+    expect(byJournal["future"]!.daysElapsed).toBe(0);
+    expect(byJournal["bad"]!.daysElapsed).toBe(0);
   });
 
   it("空 → 空数组", async () => {

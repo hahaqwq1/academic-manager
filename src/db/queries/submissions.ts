@@ -14,7 +14,7 @@ import type { WorkType, SubmissionStatus } from "@/lib/constants";
 import { DAY_MS, parseDateOnly, startOfToday } from "@/lib/format";
 
 export async function listSubmissionsForWork(
-  workId: number
+  workId: number,
 ): Promise<Submission[]> {
   return db
     .select()
@@ -62,7 +62,10 @@ export async function listPendingSubmissions(): Promise<PendingSubmission[]> {
   const enriched = rows.map((r) => {
     const submitted = parseDateOnly(r.submitted_at);
     const daysElapsed = submitted
-      ? Math.max(0, Math.floor((today.getTime() - submitted.getTime()) / DAY_MS))
+      ? Math.max(
+          0,
+          Math.floor((today.getTime() - submitted.getTime()) / DAY_MS),
+        )
       : 0;
     return {
       ...r,
