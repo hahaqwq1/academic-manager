@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -7,15 +9,9 @@ import { Toaster } from "@/components/ui/sonner";
 
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// 字体自托管:用 geist 包(内部 next/font/local + 内置字体文件),
+// 替代 next/font/google —— 消除 build 期向 Google Fonts 联网,保证离线首启 build 可靠。
+// 变量名:GeistSans → --font-geist-sans,GeistMono → --font-geist-mono(见 globals.css 映射)。
 
 export const metadata: Metadata = {
   title: {
@@ -33,7 +29,7 @@ export default function RootLayout({
     <html
       lang="zh-CN"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable}`}
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
     >
       <body className="min-h-svh antialiased">
         <ThemeProvider
