@@ -170,3 +170,48 @@
     @apply font-sans;
   }
 }
+
+/*
+ * 尊重系统「减少动态效果」偏好(prefers-reduced-motion):
+ * 关掉过渡 / 动画 / 平滑滚动,照顾前庭敏感用户。
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * 打印 / 导出 PDF 友好(主要面向 /export 成果清单):
+ * 隐藏侧栏·顶栏·跳转链接等非内容元素,去背景留边框,A4 留白。
+ */
+@media print {
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+  body {
+    background: white;
+    color: black;
+  }
+  aside,
+  header,
+  .sr-only,
+  [data-print-hide] {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  /* 卡片在打印时保留边框、去阴影、避免被截断 */
+  [data-slot="card"] {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+}
