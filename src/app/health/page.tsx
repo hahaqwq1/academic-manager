@@ -11,6 +11,7 @@ import {
   ArrowRight,
   CalendarX,
   ClipboardList,
+  DatabaseBackup,
   Link2Off,
   Send,
   ShieldCheck,
@@ -26,6 +27,7 @@ import {
   type HealthEntityRef,
   type OrphanTagRef,
 } from "@/db/queries/health";
+import { type BackupStatus, getBackupStatus } from "@/lib/backup";
 
 export const metadata: Metadata = { title: "数据体检" };
 export const dynamic = "force-dynamic";
@@ -132,8 +134,49 @@ function OrphanList({ items }: { items: OrphanTagRef[] }) {
   );
 }
 
+// 容灾状态卡:最近备份时间 + 份数 + 异地副本提醒(总是显示,即便数据健康)。
+function timeAgo(iso: string | null): string {
+  if (!iso) return "尚无备份";
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return "今天";
+  if (days === 1) return "昨天";
+  return `${days} 天前`;
+}
+
+function BackupStatusCard({ status }: { status: BackupStatus }) {
+  return (
+    <Card>
+      <CardHeader>
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <DatabaseBackup className="size-4 shrink-0 text-info" />
+          容灾状态
+        </h3>
+      </CardHeader>
+      <CardContent className="space-y-1.5">
+        {status.latestFile ? (
+          <p className="text-sm">
+            最近自动备份:
+            <span className="font-medium">{status.latestFile}</span>(
+            {timeAgo(status.latestMtime)})· 共 {status.count} 份
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            尚无自动备份(应用启动时会生成当天备份)。
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          备份目录:{status.dir}
+          。所有备份与主库同盘,只防误删/逻辑损坏,不防介质丢失——
+          建议定期把该目录复制到 U 盘 / 网盘等异地位置。
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function HealthPage() {
   const report = await getHealthReport();
+  const backup = getBackupStatus();
 
   if (report.totalIssues === 0) {
     return (
@@ -142,11 +185,14 @@ export default async function HealthPage() {
           title="数据体检"
           description="集中检查口径外与语义异常的数据。"
         />
-        <EmptyState
-          icon={ShieldCheck}
-          title="数据健康"
-          description="未发现任何异常,各项口径自洽。新增 / 导入数据后可随时回来复检。"
-        />
+        <div className="space-y-4">
+          <BackupStatusCard status={backup} />
+          <EmptyState
+            icon={ShieldCheck}
+            title="数据健康"
+            description="未发现任何异常,各项口径自洽。新增 / 导入数据后可随时回来复检。"
+          />
+        </div>
       </>
     );
   }
@@ -159,6 +205,7 @@ export default async function HealthPage() {
       />
 
       <div className="space-y-4">
+        <BackupStatusCard status={backup} />
         {report.publishedMissingDate.length > 0 ? (
           <HealthSection
             icon={CalendarX}
