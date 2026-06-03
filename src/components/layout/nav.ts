@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   Download,
   FileText,
   FolderKanban,
@@ -25,5 +26,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/submissions", label: "在投", icon: Send },
   { href: "/tags", label: "标签", icon: Tags },
   { href: "/health", label: "体检", icon: HeartPulse },
+  { href: "/reports", label: "报告", icon: CalendarDays },
   { href: "/export", label: "导出", icon: Download },
 ];
