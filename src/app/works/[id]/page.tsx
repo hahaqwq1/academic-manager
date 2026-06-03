@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { DeleteWorkButton } from "@/components/works/delete-work-button";
+import { FilePathActions } from "@/components/works/file-path-actions";
 import { WorkStatusBadge, WorkTypeBadge } from "@/components/works/work-badges";
 import { listSubmissionsForWork } from "@/db/queries/submissions";
 import { getWorkById } from "@/db/queries/works";
@@ -132,9 +133,7 @@ export default async function WorkDetailPage({
               label="文件路径"
               value={
                 work.file_path && work.file_path.trim() !== "" ? (
-                  <span className="break-all font-mono text-xs">
-                    {work.file_path.trim()}
-                  </span>
+                  <FilePathActions path={work.file_path.trim()} />
                 ) : (
                   EMPTY
                 )
