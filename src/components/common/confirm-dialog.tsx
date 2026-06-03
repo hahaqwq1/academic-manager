@@ -6,7 +6,7 @@
 // onConfirm 可为同步或异步;执行期间用 useTransition 的 pending 驱动确认按钮禁用与
 // 「进行中」文案,完成后自动关闭对话框。destructive 时确认按钮用危险样式。
 // 可复用于作品删除等需要二次确认的场景。
-import { useState, useTransition, type ReactNode } from "react";
+import { type ReactNode, useState, useTransition } from "react";
 
 import {
   AlertDialog,

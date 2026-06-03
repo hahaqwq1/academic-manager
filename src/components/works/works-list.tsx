@@ -8,8 +8,8 @@ import { User } from "lucide-react";
 import { EntityList } from "@/components/common/entity-list";
 import { Badge } from "@/components/ui/badge";
 import { WorkStatusBadge, WorkTypeBadge } from "@/components/works/work-badges";
-import { deleteWork } from "@/lib/actions/works";
 import type { WorkWithTags } from "@/db/queries/works";
+import { deleteWork } from "@/lib/actions/works";
 import { formatDate } from "@/lib/format";
 
 interface WorksListProps {

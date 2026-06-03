@@ -5,11 +5,12 @@
 // 二次确认后调 cleanupOrphanEntityTags,成功 toast + router.refresh 让体检页重算。
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { Button } from "@/components/ui/button";
 import { cleanupOrphanEntityTags } from "@/lib/actions/health";
 
 export function OrphanCleanupButton({ count }: { count: number }) {

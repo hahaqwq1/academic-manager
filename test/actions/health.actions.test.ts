@@ -1,15 +1,15 @@
 // 数据体检修订动作测试 —— 升级线(体验层)
 //
 // cleanupOrphanEntityTags:删除孤儿 entity_tags(entity_id 指向不存在的作品/项目),保留有效关联。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTestContext, type TestDb } from "../helpers/test-db";
 import {
-  makeWork,
   makeProject,
   makeTag,
+  makeWork,
   tagEntity,
 } from "../helpers/factories";
+import { createTestContext, type TestDb } from "../helpers/test-db";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({

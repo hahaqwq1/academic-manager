@@ -2,8 +2,8 @@
 //
 // 核心是「筛选状态全存 URL query」:验证搜索框防抖后 router.replace、清除关键词、
 // 以及下拉触发器的无障碍名。next/navigation 在测试环境无 Provider,需 mock。
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const replace = vi.fn();
 vi.mock("next/navigation", () => ({

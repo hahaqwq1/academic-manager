@@ -2,10 +2,10 @@
 //
 // 验证 listWorks 的筛选(type/status/q/tagId)、分页、updated_at 倒序、标签填充与多态隔离,
 // 以及 getWorkById / listWorksMinimal。用真实临时库跑真实 SQL(LIKE/inArray 子查询/count)。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { makeTag, makeWork, tagEntity } from "../helpers/factories";
 import { createTestContext, type TestDb } from "../helpers/test-db";
-import { makeWork, makeTag, tagEntity } from "../helpers/factories";
 
 // vi.mock 被提升到所有 import 之上:工厂里的 getter 每次读 holder.db(beforeEach 换新库)。
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
@@ -15,7 +15,7 @@ vi.mock("@/db", () => ({
   },
 }));
 
-import { listWorks, getWorkById, listWorksMinimal } from "@/db/queries/works";
+import { getWorkById, listWorks, listWorksMinimal } from "@/db/queries/works";
 
 let ctx: ReturnType<typeof createTestContext>;
 beforeEach(() => {

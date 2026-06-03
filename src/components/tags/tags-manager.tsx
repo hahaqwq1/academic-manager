@@ -9,6 +9,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 import { Pencil, Plus, Tag as TagIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,8 +27,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createTag, deleteTag, renameTag } from "@/lib/actions/tags";
 import type { TagWithCounts } from "@/db/queries/tags";
+import { createTag, deleteTag, renameTag } from "@/lib/actions/tags";
 import { cn } from "@/lib/utils";
 
 interface TagsManagerProps {

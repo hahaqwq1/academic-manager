@@ -2,15 +2,15 @@
 //
 // listAllTags(名称升序)、listTagsWithCounts(作品/项目引用计数)、
 // getEntitiesByTag(某标签下的作品与项目;不存在返回 null)。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTestContext, type TestDb } from "../helpers/test-db";
 import {
-  makeWork,
   makeProject,
   makeTag,
+  makeWork,
   tagEntity,
 } from "../helpers/factories";
+import { createTestContext, type TestDb } from "../helpers/test-db";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -20,9 +20,9 @@ vi.mock("@/db", () => ({
 }));
 
 import {
+  getEntitiesByTag,
   listAllTags,
   listTagsWithCounts,
-  getEntitiesByTag,
 } from "@/db/queries/tags";
 
 let ctx: ReturnType<typeof createTestContext>;

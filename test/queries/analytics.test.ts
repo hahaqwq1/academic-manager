@@ -1,8 +1,8 @@
 // 科研分析查询测试 —— 升级线(科研分析深化)
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { makeProject, makeSubmission, makeWork } from "../helpers/factories";
 import { createTestContext, type TestDb } from "../helpers/test-db";
-import { makeWork, makeProject, makeSubmission } from "../helpers/factories";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -12,13 +12,13 @@ vi.mock("@/db", () => ({
 }));
 
 import {
-  getSubmissionOutcomes,
   getAcceptanceRate,
-  getSubmissionTrendByYear,
-  getPublicationsByAuthorRole,
-  getPublicationsByType,
   getCumulativePublicationsByYear,
   getFundingSummary,
+  getPublicationsByAuthorRole,
+  getPublicationsByType,
+  getSubmissionOutcomes,
+  getSubmissionTrendByYear,
 } from "@/db/queries/analytics";
 
 let ctx: ReturnType<typeof createTestContext>;

@@ -6,12 +6,13 @@
 // 删除成功后跳回作品列表(列表页删除走 works-list 的乐观删除,不用此组件)。
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { deleteWork } from "@/lib/actions/works";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { deleteWork } from "@/lib/actions/works";
 
 interface DeleteWorkButtonProps {
   id: number;

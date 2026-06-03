@@ -7,7 +7,7 @@
 import { asc, desc } from "drizzle-orm";
 
 import { db } from "@/db";
-import { works, projects, tags } from "@/db/schema";
+import { projects, tags, works } from "@/db/schema";
 
 export interface SearchIndex {
   works: { id: number; title: string }[];

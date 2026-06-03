@@ -1,7 +1,7 @@
 // DOI 导入(Crossref)测试 —— 升级线(元数据 + 引用)
 //
 // mock 全局 fetch:验证字段映射 + 离线/404/超时/坏数据的优雅降级(永不抛)。
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { importFromDoi } from "@/lib/actions/crossref";
 

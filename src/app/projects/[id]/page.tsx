@@ -7,25 +7,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
 import { ArrowLeft, Pencil } from "lucide-react";
 
-import { getProjectById } from "@/db/queries/projects";
-import { listWorksMinimal } from "@/db/queries/works";
-import { formatDate, formatDateTime } from "@/lib/format";
-import { PageHeader } from "@/components/common/page-header";
 import {
-  EMPTY,
-  displayValue as display,
-  DetailField as Field,
   DetailBlockField as BlockField,
+  DetailField as Field,
+  displayValue as display,
+  EMPTY,
 } from "@/components/common/detail-fields";
+import { PageHeader } from "@/components/common/page-header";
+import { DeleteProjectButton } from "@/components/projects/delete-project-button";
 import {
   ProjectLevelBadge,
   ProjectRoleBadge,
   ProjectStatusBadge,
 } from "@/components/projects/project-badges";
 import { ProjectOutputsManager } from "@/components/projects/project-outputs-manager";
-import { DeleteProjectButton } from "@/components/projects/delete-project-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +33,9 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { getProjectById } from "@/db/queries/projects";
+import { listWorksMinimal } from "@/db/queries/works";
+import { formatDate, formatDateTime } from "@/lib/format";
 
 export async function generateMetadata({
   params,

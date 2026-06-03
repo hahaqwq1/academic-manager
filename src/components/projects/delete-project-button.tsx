@@ -6,12 +6,13 @@
 // 删除成功后跳回项目列表(列表页删除走 projects-list 的乐观删除,不用此组件)。
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { deleteProject } from "@/lib/actions/projects";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { deleteProject } from "@/lib/actions/projects";
 
 interface DeleteProjectButtonProps {
   id: number;

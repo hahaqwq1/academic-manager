@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+
 import { CommandPalette } from "./command-palette";
 import { MobileNav } from "./mobile-nav";
 import { NAV_ITEMS } from "./nav";

@@ -4,14 +4,14 @@
 //
 // 仅声明项目域的差异点(徽标 / 元信息 / 链接 / 删除文案),通用的乐观删除与行布局由 EntityList 承担。
 import { EntityList } from "@/components/common/entity-list";
-import { Badge } from "@/components/ui/badge";
 import {
   ProjectLevelBadge,
   ProjectRoleBadge,
   ProjectStatusBadge,
 } from "@/components/projects/project-badges";
-import { deleteProject } from "@/lib/actions/projects";
+import { Badge } from "@/components/ui/badge";
 import type { ProjectWithTags } from "@/db/queries/projects";
+import { deleteProject } from "@/lib/actions/projects";
 import { formatDate } from "@/lib/format";
 
 interface ProjectsListProps {

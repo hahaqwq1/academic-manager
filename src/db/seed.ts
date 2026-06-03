@@ -7,11 +7,10 @@
 // - 只插数据,不建表;运行前假定迁移已创建好表结构。
 // - 幂等:先按外键顺序删子表再删父表,然后重新插入;整个清空+插入包进一个
 //   同步事务,任一步失败则整体回滚。
-import { existsSync, mkdirSync } from "node:fs";
-import path from "node:path";
-
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { existsSync, mkdirSync } from "node:fs";
+import path from "node:path";
 
 import * as schema from "./schema";
 

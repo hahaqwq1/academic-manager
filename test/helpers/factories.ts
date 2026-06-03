@@ -3,24 +3,24 @@
 // 直接用 drizzle 往临时库插入最小合法行,返回带 id 的整行(便于断言、关联)。
 // 默认值刻意「能过非空约束 + 语义清晰」;需要控制排序/筛选时由 overrides 显式覆盖,
 // 尤其是 updated_at(works/projects 列表按其倒序):不覆盖则取 $defaultFn 的 isoNow()。
+import type {
+  EntityTag,
+  NewProject,
+  NewSubmission,
+  NewWork,
+  Project,
+  ProjectOutput,
+  Submission,
+  Tag,
+  Work,
+} from "@/db/schema";
 import {
-  works,
+  entity_tags,
+  project_outputs,
   projects,
   submissions,
   tags,
-  entity_tags,
-  project_outputs,
-} from "@/db/schema";
-import type {
-  Work,
-  Project,
-  Submission,
-  Tag,
-  EntityTag,
-  ProjectOutput,
-  NewWork,
-  NewProject,
-  NewSubmission,
+  works,
 } from "@/db/schema";
 
 import type { TestDb } from "./test-db";

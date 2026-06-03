@@ -1,12 +1,11 @@
-import "server-only";
-
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-
 import * as schema from "./schema";
+
+import "server-only";
 
 // 数据目录走环境变量,本地默认 ./data;上 VPS 时把 DATA_DIR 指向挂载卷即可,代码不动。
 export const DATA_DIR = process.env.DATA_DIR ?? "./data";

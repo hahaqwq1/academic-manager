@@ -1,8 +1,8 @@
 // EntityList 组件测试 —— 升级线(组件测试体系)
 //
 // 泛型列表壳:验证每行标题/详情链接、编辑链接、删除按钮无障碍名,以及空列表结构。
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 import { EntityList } from "@/components/common/entity-list";
 

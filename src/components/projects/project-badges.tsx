@@ -6,8 +6,8 @@
 //
 // 纯展示组件,无交互,可在 server 组件中直接使用(无需 "use client")。
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import type { ProjectLevel, ProjectRole, ProjectStatus } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 // 级别 → 语义色:国家级(primary 主色)> 省部级(info)> 校级 / 其他(中性)。
 const LEVEL_CLASSNAME: Record<ProjectLevel, string> = {

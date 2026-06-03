@@ -1,6 +1,6 @@
 name: CI
 
-# 推送与 PR 到 main 时运行:类型/构建/测试三道关。
+# 推送与 PR 到 main 时运行:类型/Lint/构建/测试四道关。
 on:
   push:
     branches: [main]
@@ -30,14 +30,15 @@ jobs:
       - name: Apply DB migrations
         run: npm run db:migrate
 
+      # 先跑快而便宜的静态门(类型 + Lint),失败即早退,省去较慢的 build。
       - name: Type check
         run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
 
       - name: Build
         run: npm run build
 
       - name: Unit & integration tests
         run: npm test
-
-      - name: Lint
-        run: npm run lint

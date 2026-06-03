@@ -2,6 +2,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import jsxA11y from "eslint-plugin-jsx-a11y";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -11,6 +12,25 @@ const eslintConfig = defineConfig([
   {
     files: ["**/*.{jsx,tsx}"],
     rules: { ...jsxA11y.flatConfigs.recommended.rules },
+  },
+  // import / export 排序(自动可修复)。分组:react·next → 第三方 → @/ 别名 → 相对 → 样式。
+  {
+    plugins: { "simple-import-sort": simpleImportSort },
+    rules: {
+      "simple-import-sort/imports": [
+        "error",
+        {
+          groups: [
+            ["^react", "^next"],
+            ["^@?\\w"],
+            ["^@/"],
+            ["^\\."],
+            ["^.+\\.s?css$"],
+          ],
+        },
+      ],
+      "simple-import-sort/exports": "error",
+    },
   },
   // Override default ignores of eslint-config-next.
   globalIgnores([

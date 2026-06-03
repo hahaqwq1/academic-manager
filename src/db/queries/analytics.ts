@@ -3,21 +3,21 @@
 // 仪表盘新增的聚合:投稿录用率/结果分布、审稿周期与投稿量逐年趋势、发表的作者角色/类型分布、
 // 累计发表曲线、按级别×币种的经费汇总(只计结构化 funding_amount,文本经费单列提示)。
 // 沿用 dashboard.ts 的「SQL 取数 + JS 聚合」风格;日期解析复用 format.parseDateOnly。
-import { eq, and, isNotNull, count } from "drizzle-orm";
+import { and, count, eq, isNotNull } from "drizzle-orm";
 
 import { db } from "@/db";
-import { works, submissions, projects } from "@/db/schema";
-import { DAY_MS, parseDateOnly } from "@/lib/format";
+import { projects, submissions, works } from "@/db/schema";
 import {
-  SUBMISSION_STATUSES,
-  WORK_TYPES,
   AUTHOR_ROLES,
-  PROJECT_LEVELS,
-  type SubmissionStatus,
-  type WorkType,
   type AuthorRole,
+  PROJECT_LEVELS,
   type ProjectLevel,
+  SUBMISSION_STATUSES,
+  type SubmissionStatus,
+  WORK_TYPES,
+  type WorkType,
 } from "@/lib/constants";
+import { DAY_MS, parseDateOnly } from "@/lib/format";
 
 // 投稿结果分布(仅计数 > 0 的状态,供环形饼)。
 export interface OutcomeCount {

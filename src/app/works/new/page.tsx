@@ -4,13 +4,14 @@
 // 提交成功后 createWork 自身 redirect 到新作品详情页。
 import type { Metadata } from "next";
 import Link from "next/link";
+
 import { ArrowLeft } from "lucide-react";
 
+import { PageHeader } from "@/components/common/page-header";
+import { Button } from "@/components/ui/button";
+import { WorkForm } from "@/components/works/work-form";
 import { listAllTags } from "@/db/queries/tags";
 import { createWork } from "@/lib/actions/works";
-import { PageHeader } from "@/components/common/page-header";
-import { WorkForm } from "@/components/works/work-form";
-import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "新建作品" };
 

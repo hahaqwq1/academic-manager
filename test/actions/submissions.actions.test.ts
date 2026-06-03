@@ -3,11 +3,11 @@
 // 不 redirect,直接返回 { ok }。重点:
 // - (work_id,round) 唯一约束拦重复轮次(P0-2 迁移 0001),action 捕获返回友好错误。
 // - update/delete 的归属校验 and(eq(id), eq(work_id)):workId 不匹配时静默 0 行(P0-2)。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { eq } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { makeSubmission, makeWork } from "../helpers/factories";
 import { createTestContext, type TestDb } from "../helpers/test-db";
-import { makeWork, makeSubmission } from "../helpers/factories";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -18,12 +18,12 @@ vi.mock("@/db", () => ({
 const revalidateMock = vi.hoisted(() => vi.fn());
 vi.mock("next/cache", () => ({ revalidatePath: revalidateMock }));
 
+import { submissions } from "@/db/schema";
 import {
   createSubmission,
-  updateSubmission,
   deleteSubmission,
+  updateSubmission,
 } from "@/lib/actions/submissions";
-import { submissions } from "@/db/schema";
 
 let ctx: ReturnType<typeof createTestContext>;
 beforeEach(() => {

@@ -4,6 +4,7 @@
 // 每条尽量深链到对应实体详情页或筛选列表,便于一处订正。依赖实时数据,强制动态渲染。
 import type { Metadata } from "next";
 import Link from "next/link";
+
 import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
@@ -15,16 +16,16 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import { PageHeader } from "@/components/common/page-header";
 import { EmptyState } from "@/components/common/empty-state";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { PageHeader } from "@/components/common/page-header";
+import { OrphanCleanupButton } from "@/components/health/orphan-cleanup-button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   getHealthReport,
   type HealthEntityRef,
   type OrphanTagRef,
 } from "@/db/queries/health";
-import { OrphanCleanupButton } from "@/components/health/orphan-cleanup-button";
 
 export const metadata: Metadata = { title: "数据体检" };
 export const dynamic = "force-dynamic";

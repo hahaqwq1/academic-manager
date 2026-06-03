@@ -3,8 +3,8 @@
 // 用真实 action + 真实 query 串起一条业务闭环:
 //   建标签 → 建作品(挂标签)→ 按标签筛选命中 → 改作品(换标签)→ 删作品(级联删投稿)。
 // 全程真实 SQL,验证 action 写入与 query 读取在同一库上自洽。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { eq } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestContext, type TestDb } from "../helpers/test-db";
 
@@ -22,11 +22,11 @@ const redirectMock = vi.hoisted(() =>
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { createTag } from "@/lib/actions/tags";
-import { createWork, updateWork, deleteWork } from "@/lib/actions/works";
-import { createSubmission } from "@/lib/actions/submissions";
 import { listWorks } from "@/db/queries/works";
 import { submissions } from "@/db/schema";
+import { createSubmission } from "@/lib/actions/submissions";
+import { createTag } from "@/lib/actions/tags";
+import { createWork, deleteWork, updateWork } from "@/lib/actions/works";
 
 let ctx: ReturnType<typeof createTestContext>;
 beforeEach(() => {

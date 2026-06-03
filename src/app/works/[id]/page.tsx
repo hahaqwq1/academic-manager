@@ -6,21 +6,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
 import { ArrowLeft, Pencil } from "lucide-react";
 
-import { getWorkById } from "@/db/queries/works";
-import { listSubmissionsForWork } from "@/db/queries/submissions";
-import { WorkSubmissionsManager } from "@/components/submissions/work-submissions-manager";
-import { formatDate, formatDateTime } from "@/lib/format";
-import { PageHeader } from "@/components/common/page-header";
 import {
-  EMPTY,
-  displayValue as display,
-  DetailField as Field,
   DetailBlockField as BlockField,
+  DetailField as Field,
+  displayValue as display,
+  EMPTY,
 } from "@/components/common/detail-fields";
-import { WorkStatusBadge, WorkTypeBadge } from "@/components/works/work-badges";
-import { DeleteWorkButton } from "@/components/works/delete-work-button";
+import { PageHeader } from "@/components/common/page-header";
+import { WorkSubmissionsManager } from "@/components/submissions/work-submissions-manager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +26,11 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { DeleteWorkButton } from "@/components/works/delete-work-button";
+import { WorkStatusBadge, WorkTypeBadge } from "@/components/works/work-badges";
+import { listSubmissionsForWork } from "@/db/queries/submissions";
+import { getWorkById } from "@/db/queries/works";
+import { formatDate, formatDateTime } from "@/lib/format";
 
 export async function generateMetadata({
   params,

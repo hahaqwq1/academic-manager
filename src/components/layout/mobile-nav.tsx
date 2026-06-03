@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { GraduationCap, Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+
 import { APP_NAME } from "./nav";
 import { SidebarNav } from "./sidebar-nav";
 

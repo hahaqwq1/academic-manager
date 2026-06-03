@@ -1,28 +1,28 @@
 // 枚举常量单元测试 —— P2-7
 //
 // 纯函数。守护枚举值集合、zod 校验、中文 label map 与 OVERDUE_DAYS 不被误改。
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
-  WORK_TYPES,
-  workTypeSchema,
-  WORK_TYPE_LABELS,
-  WORK_STATUSES,
-  workStatusSchema,
   AUTHOR_ROLES,
   authorRoleSchema,
+  ENTITY_TYPE_LABELS,
+  ENTITY_TYPES,
+  entityTypeSchema,
+  OVERDUE_DAYS,
   PROJECT_LEVELS,
-  projectLevelSchema,
   PROJECT_ROLES,
-  projectRoleSchema,
   PROJECT_STATUSES,
+  projectLevelSchema,
+  projectRoleSchema,
   projectStatusSchema,
   SUBMISSION_STATUSES,
   submissionStatusSchema,
-  ENTITY_TYPES,
-  entityTypeSchema,
-  ENTITY_TYPE_LABELS,
-  OVERDUE_DAYS,
+  WORK_STATUSES,
+  WORK_TYPE_LABELS,
+  WORK_TYPES,
+  workStatusSchema,
+  workTypeSchema,
 } from "@/lib/constants";
 
 describe("枚举值集合", () => {

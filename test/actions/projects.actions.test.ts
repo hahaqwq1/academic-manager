@@ -1,17 +1,17 @@
 // 项目 Server Action 集成测试 —— P2-7
 //
 // create/update/delete 同作品模式;另含成果挂接 link(onConflictDoNothing 幂等)/ unlink。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTestContext, type TestDb } from "../helpers/test-db";
 import {
-  makeProject,
-  makeWork,
-  makeTag,
-  tagEntity,
   linkOutput,
+  makeProject,
+  makeTag,
+  makeWork,
+  tagEntity,
 } from "../helpers/factories";
+import { createTestContext, type TestDb } from "../helpers/test-db";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -28,14 +28,14 @@ vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 const revalidateMock = vi.hoisted(() => vi.fn());
 vi.mock("next/cache", () => ({ revalidatePath: revalidateMock }));
 
+import { entity_tags, project_outputs, projects } from "@/db/schema";
 import {
   createProject,
-  updateProject,
   deleteProject,
   linkProjectOutput,
   unlinkProjectOutput,
+  updateProject,
 } from "@/lib/actions/projects";
-import { projects, entity_tags, project_outputs } from "@/db/schema";
 
 let ctx: ReturnType<typeof createTestContext>;
 beforeEach(() => {

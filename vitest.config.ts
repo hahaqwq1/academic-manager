@@ -7,11 +7,10 @@
 //   - dom:React 组件测试。environment=happy-dom、@vitejs/plugin-react 转 JSX/TSX、
 //     setupFiles 装 jest-dom 匹配器并给 Radix 补几个 happy-dom 缺失的 DOM API。只收 *.test.tsx。
 // alias `@` → src/ 需在每个 project 各自声明(project 不自动继承根 resolve)。
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-
-import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { defineConfig } from "vitest/config";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 const alias = { "@": path.resolve(root, "src") };

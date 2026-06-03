@@ -1,16 +1,16 @@
 // 数据健康中心查询测试 —— 升级线(数据完整性 + 体验层)
 //
 // 覆盖 5 类「DB 允许但口径/语义可疑」的检查,以及汇总报告的计数与空态。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTestContext, type TestDb } from "../helpers/test-db";
 import {
-  makeWork,
   makeProject,
   makeSubmission,
   makeTag,
+  makeWork,
   tagEntity,
 } from "../helpers/factories";
+import { createTestContext, type TestDb } from "../helpers/test-db";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -20,11 +20,11 @@ vi.mock("@/db", () => ({
 }));
 
 import {
-  findPublishedMissingDate,
   findDatedNotPublished,
-  findWorksSubmittingNoSubmission,
-  findSubmissionsDecidedButPending,
   findOrphanEntityTags,
+  findPublishedMissingDate,
+  findSubmissionsDecidedButPending,
+  findWorksSubmittingNoSubmission,
   getHealthReport,
 } from "@/db/queries/health";
 

@@ -4,8 +4,8 @@
 // 这是「绕过 zod 的最后一道闸」——故意用原生 sqlite 直插坏值(TS 类型层拦不到的),断言被 DB 拒。
 // 关键:test-db helper 是回放 drizzle/*.sql(而非 schema.ts),所以这里测的就是真实迁移产物;
 // 若约束没落进迁移 SQL,这里会第一时间红。
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import type Database from "better-sqlite3";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { createTestSqlite } from "./helpers/test-db";
 

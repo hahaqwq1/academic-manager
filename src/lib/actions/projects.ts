@@ -10,10 +10,11 @@
 //   project_outputs 由外键级联自动删除。
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { eq, and } from "drizzle-orm";
+
+import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { projects, entity_tags, project_outputs } from "@/db/schema";
+import { entity_tags, project_outputs, projects } from "@/db/schema";
 import { projectInputSchema } from "@/lib/validations";
 
 // 动作返回状态:供 client 表单读取。

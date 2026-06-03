@@ -3,10 +3,10 @@
 // listSubmissionsForWork:某作品全部轮次,按 round 升序。
 // listPendingSubmissions:仅「在审 AND decided_at IS NULL」,联表作品,计算 daysElapsed /
 //   isOverdue(>90 严格),排序「超期优先,其次 daysElapsed 倒序」。用 fake timers 钉死今天。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { makeSubmission, makeWork } from "../helpers/factories";
 import { createTestContext, type TestDb } from "../helpers/test-db";
-import { makeWork, makeSubmission } from "../helpers/factories";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -16,8 +16,8 @@ vi.mock("@/db", () => ({
 }));
 
 import {
-  listSubmissionsForWork,
   listPendingSubmissions,
+  listSubmissionsForWork,
 } from "@/db/queries/submissions";
 
 let ctx: ReturnType<typeof createTestContext>;

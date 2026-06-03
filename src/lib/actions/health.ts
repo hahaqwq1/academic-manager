@@ -6,11 +6,12 @@
 // CHECK/外键都管不到的脏数据(多态 entity_id 无外键),只能在此显式清理。
 // 其余健康项(缺日期/状态漂移)有明确的「去对应实体订正」路径,保持导航式、不在此批量改。
 import { revalidatePath } from "next/cache";
+
 import { inArray } from "drizzle-orm";
 
 import { db } from "@/db";
-import { entity_tags } from "@/db/schema";
 import { findOrphanEntityTags } from "@/db/queries/health";
+import { entity_tags } from "@/db/schema";
 
 export interface CleanupResult {
   ok: boolean;

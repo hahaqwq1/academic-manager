@@ -3,7 +3,7 @@
 // 只测纯函数 pickBackupsToDelete 的「保留最近 N 份、删更早、忽略非备份文件」逻辑。
 // backup.ts 顶部 `import { sqlite } from "@/db"`(server-only)在 vitest 下会抛,故沿用
 // 既有模式 mock 掉 @/db(本测试不触达 sqlite,只用纯函数)。
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/db", () => ({ sqlite: {}, DATA_DIR: "./data" }));
 

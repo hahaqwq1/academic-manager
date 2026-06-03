@@ -3,12 +3,12 @@
 // listAllTags:全部标签(供表单 / 筛选器渲染选项)。
 // listTagsWithCounts:全部标签 + 各自被作品 / 项目引用的数量(供标签管理页)。
 // getEntitiesByTag:某标签下的作品与项目(供按主题浏览)。
-import { asc, eq, and, desc, inArray, count } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
-import { tags, entity_tags, works, projects } from "@/db/schema";
-import type { Tag, Project } from "@/db/schema";
 import type { WorkBrief } from "@/db/queries/works";
+import type { Project, Tag } from "@/db/schema";
+import { entity_tags, projects, tags, works } from "@/db/schema";
 
 // 全部标签,按名称升序。
 export async function listAllTags(): Promise<Tag[]> {

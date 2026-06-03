@@ -2,19 +2,19 @@
 //
 // date-rules.ts 是表单(validations.ts)与导入恢复(actions/export.ts)共享的「单一真源」。
 // 此处直接钉死谓词与参数对象,确保任何一侧改了规则/文案都会被这里以及两侧的端到端测试同时发现。
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
-  DATE_FORMAT_REGEX,
   DATE_FORMAT_MESSAGE,
+  DATE_FORMAT_REGEX,
   DATE_INVALID_MESSAGE,
-  isRealCalendarDate,
   isProjectDateOrderValid,
-  projectDateOrderRefineParams,
-  PROJECT_DATE_ORDER_MESSAGE,
+  isRealCalendarDate,
   isSubmissionDateOrderValid,
-  submissionDateOrderRefineParams,
+  PROJECT_DATE_ORDER_MESSAGE,
+  projectDateOrderRefineParams,
   SUBMISSION_DATE_ORDER_MESSAGE,
+  submissionDateOrderRefineParams,
 } from "@/lib/date-rules";
 
 describe("isRealCalendarDate(委托 parseDateOnly 的真实日历日校验)", () => {

@@ -2,16 +2,16 @@
 //
 // listProjects 筛选(level/status/q over title+notes+grant_no/tagId)+ 分页 + 倒序 + 标签填充;
 // getProjectById 带标签与已挂接成果(project_outputs→works),不存在返回 null。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTestContext, type TestDb } from "../helpers/test-db";
 import {
-  makeProject,
-  makeWork,
-  makeTag,
-  tagEntity,
   linkOutput,
+  makeProject,
+  makeTag,
+  makeWork,
+  tagEntity,
 } from "../helpers/factories";
+import { createTestContext, type TestDb } from "../helpers/test-db";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -20,7 +20,7 @@ vi.mock("@/db", () => ({
   },
 }));
 
-import { listProjects, getProjectById } from "@/db/queries/projects";
+import { getProjectById, listProjects } from "@/db/queries/projects";
 
 let ctx: ReturnType<typeof createTestContext>;
 beforeEach(() => {

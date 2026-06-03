@@ -5,18 +5,18 @@
 //
 // 标签关联:entity_tags 多态表(entity_type='project' and entity_id=projects.id and tag_id)。
 // 成果挂接:project_outputs(project_id, work_id)多对多。
-import { eq, and, or, inArray, desc, count } from "drizzle-orm";
+import { and, count, desc, eq, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db";
+import type { WorkBrief } from "@/db/queries/works";
+import type { Project, Tag } from "@/db/schema";
 import {
-  projects,
   entity_tags,
-  tags,
   project_outputs,
+  projects,
+  tags,
   works,
 } from "@/db/schema";
-import type { Project, Tag } from "@/db/schema";
-import type { WorkBrief } from "@/db/queries/works";
 import type { ProjectLevel, ProjectStatus } from "@/lib/constants";
 import { likeContains } from "@/lib/like";
 

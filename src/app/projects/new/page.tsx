@@ -4,13 +4,14 @@
 // 提交成功后 createProject 自身 redirect 到新项目详情页。
 import type { Metadata } from "next";
 import Link from "next/link";
+
 import { ArrowLeft } from "lucide-react";
 
-import { listAllTags } from "@/db/queries/tags";
-import { createProject } from "@/lib/actions/projects";
 import { PageHeader } from "@/components/common/page-header";
 import { ProjectForm } from "@/components/projects/project-form";
 import { Button } from "@/components/ui/button";
+import { listAllTags } from "@/db/queries/tags";
+import { createProject } from "@/lib/actions/projects";
 
 export const metadata: Metadata = { title: "新建项目" };
 

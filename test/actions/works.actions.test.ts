@@ -2,16 +2,16 @@
 //
 // 成功路径在 try/catch 之外 redirect():mock 成抛 `NEXT_REDIRECT:<url>` 哨兵,用 rejects 断言;
 // 失败/校验路径正常返回对象。同时校验事务副作用(works 行、entity_tags 同步、级联删除)。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTestContext, type TestDb } from "../helpers/test-db";
 import {
-  makeWork,
-  makeTag,
   makeSubmission,
+  makeTag,
+  makeWork,
   tagEntity,
 } from "../helpers/factories";
+import { createTestContext, type TestDb } from "../helpers/test-db";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -28,13 +28,13 @@ vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 const revalidateMock = vi.hoisted(() => vi.fn());
 vi.mock("next/cache", () => ({ revalidatePath: revalidateMock }));
 
+import { entity_tags, submissions, works } from "@/db/schema";
 import {
   createWork,
-  updateWork,
   deleteWork,
   markWorkPublished,
+  updateWork,
 } from "@/lib/actions/works";
-import { works, entity_tags, submissions } from "@/db/schema";
 
 let ctx: ReturnType<typeof createTestContext>;
 beforeEach(() => {

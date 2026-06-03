@@ -2,10 +2,10 @@
 //
 // 重点:getDashboardStats 的「在投」口径必须与 listPendingSubmissions 一致(P0-1 回归)。
 // 另含 getPublicationsByYear / getReviewCycleByJournal / getClosingProjects(后者钉死今天)。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { makeProject, makeSubmission, makeWork } from "../helpers/factories";
 import { createTestContext, type TestDb } from "../helpers/test-db";
-import { makeWork, makeProject, makeSubmission } from "../helpers/factories";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -15,11 +15,11 @@ vi.mock("@/db", () => ({
 }));
 
 import {
-  getDashboardStats,
-  getPublicationsByYear,
-  getPublicationDataHealth,
-  getReviewCycleByJournal,
   getClosingProjects,
+  getDashboardStats,
+  getPublicationDataHealth,
+  getPublicationsByYear,
+  getReviewCycleByJournal,
 } from "@/db/queries/dashboard";
 import { listPendingSubmissions } from "@/db/queries/submissions";
 

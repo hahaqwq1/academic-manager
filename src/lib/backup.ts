@@ -10,7 +10,7 @@
 import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import path from "node:path";
 
-import { sqlite, DATA_DIR } from "@/db";
+import { DATA_DIR, sqlite } from "@/db";
 
 // 保留最近多少份每日备份。
 const KEEP = 14;

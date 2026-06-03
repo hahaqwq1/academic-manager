@@ -2,9 +2,9 @@
 //
 // 投稿管理:验证列表渲染(轮次/期刊/状态/计数)、空态、图标按钮无障碍名,以及对话框可打开。
 // 组件 import 了 "use server" 的 action 模块(经 @/db 链到 server-only,测试环境会抛),故整模块 mock。
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/actions/submissions", () => ({
   createSubmission: vi.fn(),

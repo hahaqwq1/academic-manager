@@ -1,7 +1,7 @@
 // 引用格式化单测 —— 升级线(元数据 + 引用)
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { toAPA, toGB7714, toBibTeX, type CitationWork } from "@/lib/citation";
+import { type CitationWork, toAPA, toBibTeX, toGB7714 } from "@/lib/citation";
 
 const base: CitationWork = {
   title: "论文标题",

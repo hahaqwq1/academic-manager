@@ -7,6 +7,7 @@
 // 提供:固定「跳转」(各导航项)、「新建」(作品/项目),以及动态「作品/项目/标签」搜索结果。
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+
 import {
   FilePlus,
   FileText,
@@ -26,8 +27,9 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command";
-import { NAV_ITEMS } from "./nav";
 import { getSearchIndex, type SearchIndex } from "@/lib/actions/search";
+
+import { NAV_ITEMS } from "./nav";
 
 const EMPTY_INDEX: SearchIndex = { works: [], projects: [], tags: [] };
 

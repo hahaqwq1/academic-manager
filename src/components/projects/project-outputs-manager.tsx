@@ -9,15 +9,11 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 import { ChevronsUpDown, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -26,9 +22,14 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { WorkStatusBadge, WorkTypeBadge } from "@/components/works/work-badges";
-import { linkProjectOutput, unlinkProjectOutput } from "@/lib/actions/projects";
 import type { WorkBrief } from "@/db/queries/works";
+import { linkProjectOutput, unlinkProjectOutput } from "@/lib/actions/projects";
 
 interface ProjectOutputsManagerProps {
   projectId: number;

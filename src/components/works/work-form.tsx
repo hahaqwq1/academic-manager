@@ -12,22 +12,8 @@
 // 成功时 action 自身 redirect,无需在此处理。
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
 
-import {
-  AUTHOR_ROLES,
-  WORK_STATUSES,
-  WORK_TYPES,
-  WORK_TYPE_LABELS,
-  type AuthorRole,
-  type WorkStatus,
-  type WorkType,
-} from "@/lib/constants";
-import type { WorkInput } from "@/lib/validations";
-import type { WorkActionState } from "@/lib/actions/works";
-import { importFromDoi } from "@/lib/actions/crossref";
-import type { Tag, Work } from "@/db/schema";
-import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +28,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { Tag, Work } from "@/db/schema";
+import { importFromDoi } from "@/lib/actions/crossref";
+import type { WorkActionState } from "@/lib/actions/works";
+import {
+  AUTHOR_ROLES,
+  type AuthorRole,
+  WORK_STATUSES,
+  WORK_TYPE_LABELS,
+  WORK_TYPES,
+  type WorkStatus,
+  type WorkType,
+} from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import type { WorkInput } from "@/lib/validations";
 
 interface WorkFormProps {
   action: (input: WorkInput) => Promise<WorkActionState>;

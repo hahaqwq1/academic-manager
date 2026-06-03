@@ -6,13 +6,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/common/page-header";
-import { TagsManager } from "@/components/tags/tags-manager";
-import { WorkStatusBadge, WorkTypeBadge } from "@/components/works/work-badges";
 import {
   ProjectLevelBadge,
   ProjectStatusBadge,
 } from "@/components/projects/project-badges";
-import { listTagsWithCounts, getEntitiesByTag } from "@/db/queries/tags";
+import { TagsManager } from "@/components/tags/tags-manager";
+import { WorkStatusBadge, WorkTypeBadge } from "@/components/works/work-badges";
+import { getEntitiesByTag, listTagsWithCounts } from "@/db/queries/tags";
 
 export const metadata: Metadata = { title: "标签" };
 

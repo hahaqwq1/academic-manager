@@ -4,12 +4,12 @@
 // - P0-3 日历真值校验(拒 2024-02-30 / 2024-13-01,接受闰年 2024-02-29)。
 // - 可空文本「空串/纯空白 → null,否则 trim」的预处理契约。
 // - word_count / round 的 coerce + 边界。
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
-  workInputSchema,
   projectInputSchema,
   submissionInputSchema,
+  workInputSchema,
 } from "@/lib/validations";
 
 describe("workInputSchema", () => {

@@ -3,7 +3,7 @@
 // 纯函数。空值占位「—」、纯日期按本地零点解析(不被当 UTC 偏移一天)。
 // 注意:formatDateTime 的时分依赖本地时区,CI 多在 UTC,故对带时间的断言只校验
 // 「非占位 + 含年份」,避免跨时区脆弱;纯日期(本地零点)在任意时区都落同一天,可精确断言。
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { formatDate, formatDateTime, parseDateOnly } from "@/lib/format";
 

@@ -4,9 +4,9 @@ import {
   FolderKanban,
   HeartPulse,
   LayoutDashboard,
+  type LucideIcon,
   Send,
   Tags,
-  type LucideIcon,
 } from "lucide-react";
 
 export const APP_NAME = "学术资料库";

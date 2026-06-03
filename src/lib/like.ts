@@ -3,7 +3,7 @@
 // SQLite 的 LIKE 把 % 和 _ 当通配符。直接把用户关键词拼进 `%kw%` 会让「搜 100% / a_b」
 // 被误当通配符匹配(% 匹配任意串、_ 匹配任意单字符),返回超出预期的结果。
 // 此处转义 \ % _ 三个字符,并配合 LIKE ... ESCAPE '\',使它们按字面量匹配。
-import { sql, type Column } from "drizzle-orm";
+import { type Column, sql } from "drizzle-orm";
 
 // 转义 LIKE 元字符:`\` `%` `_` 各前置一个反斜杠(单次扫描,插入的反斜杠不会被重复转义)。
 export function escapeLike(input: string): string {

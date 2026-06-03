@@ -8,7 +8,7 @@ import {
   type FilterSelectConfig,
 } from "@/components/common/entity-filters";
 import type { Tag } from "@/db/schema";
-import { WORK_STATUSES, WORK_TYPES, WORK_TYPE_LABELS } from "@/lib/constants";
+import { WORK_STATUSES, WORK_TYPE_LABELS, WORK_TYPES } from "@/lib/constants";
 
 interface WorksFiltersProps {
   allTags: Tag[];

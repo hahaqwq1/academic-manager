@@ -3,8 +3,9 @@
 // 汇总:关键数字卡 + 年度发表数(柱)+ 主题方向分布(饼)+ 各刊平均审稿周期(横向柱)
 // + 当前在投一览 + 待办提醒(超期投稿 / 结题中·临近结题项目)。
 // 依赖实时数据与「当前日期」,强制动态渲染。
-import Link from "next/link";
 import type { ReactNode } from "react";
+import Link from "next/link";
+
 import {
   AlertTriangle,
   BadgeCheck,
@@ -16,40 +17,40 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/common/page-header";
-import { StatCard } from "@/components/dashboard/stat-card";
 import {
+  CumulativePublicationsChart,
+  FundingByLevelChart,
+  PublicationRolePie,
   PublicationsBarChart,
+  PublicationTypePie,
   ReviewCycleChart,
-  TagPieChart,
   SubmissionOutcomePie,
   SubmissionTrendChart,
-  CumulativePublicationsChart,
-  PublicationRolePie,
-  PublicationTypePie,
-  FundingByLevelChart,
+  TagPieChart,
 } from "@/components/dashboard/charts-lazy";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { ProjectStatusBadge } from "@/components/projects/project-badges";
+import { SubmissionStatusBadge } from "@/components/submissions/submission-badges";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { SubmissionStatusBadge } from "@/components/submissions/submission-badges";
-import { ProjectStatusBadge } from "@/components/projects/project-badges";
 import {
-  getDashboardStats,
-  getPublicationsByYear,
-  getPublicationDataHealth,
-  getReviewCycleByJournal,
-  getClosingProjects,
-} from "@/db/queries/dashboard";
-import { listTagsWithCounts } from "@/db/queries/tags";
-import { listPendingSubmissions } from "@/db/queries/submissions";
-import {
-  getSubmissionOutcomes,
   getAcceptanceRate,
-  getSubmissionTrendByYear,
-  getPublicationsByAuthorRole,
-  getPublicationsByType,
   getCumulativePublicationsByYear,
   getFundingSummary,
+  getPublicationsByAuthorRole,
+  getPublicationsByType,
+  getSubmissionOutcomes,
+  getSubmissionTrendByYear,
 } from "@/db/queries/analytics";
+import {
+  getClosingProjects,
+  getDashboardStats,
+  getPublicationDataHealth,
+  getPublicationsByYear,
+  getReviewCycleByJournal,
+} from "@/db/queries/dashboard";
+import { listPendingSubmissions } from "@/db/queries/submissions";
+import { listTagsWithCounts } from "@/db/queries/tags";
 import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";

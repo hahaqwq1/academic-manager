@@ -6,12 +6,12 @@
 //   - getReviewCycleByJournal:各期刊平均审稿周期(由已出结果的投稿 decided-submitted 计算)。
 //   - getClosingProjects:结题中 / 临近结题(end_date 在未来 90 天内或已过期且未结题)的项目(待办)。
 // 标签分布复用 listTagsWithCounts;在投 / 超期复用 listPendingSubmissions(见各自查询模块)。
-import { eq, ne, isNotNull, count, and, isNull, notInArray } from "drizzle-orm";
+import { and, count, eq, isNotNull, isNull, ne, notInArray } from "drizzle-orm";
 
 import { db } from "@/db";
-import { works, projects, submissions } from "@/db/schema";
-import { DAY_MS, parseDateOnly, startOfToday } from "@/lib/format";
+import { projects, submissions, works } from "@/db/schema";
 import type { ProjectStatus } from "@/lib/constants";
+import { DAY_MS, parseDateOnly, startOfToday } from "@/lib/format";
 
 export interface DashboardStats {
   totalWorks: number;

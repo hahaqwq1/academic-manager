@@ -6,18 +6,18 @@
 // - 结构/日历日期非法 → 校验阶段拒绝,库不动。
 // - 外键孤儿 → 插入失败,整事务回滚,库保持导入前(证明「先删后插」失败不丢数据)。
 // - 空 dump → 合法地清空全库。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { eq } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTestContext, type TestDb } from "../helpers/test-db";
 import {
-  makeWork,
+  linkOutput,
   makeProject,
   makeSubmission,
   makeTag,
+  makeWork,
   tagEntity,
-  linkOutput,
 } from "../helpers/factories";
+import { createTestContext, type TestDb } from "../helpers/test-db";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -27,9 +27,9 @@ vi.mock("@/db", () => ({
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
+import { type DatabaseDump, getDatabaseDump } from "@/db/queries/export";
+import { projects, submissions, tags, works } from "@/db/schema";
 import { importDatabase } from "@/lib/actions/export";
-import { getDatabaseDump, type DatabaseDump } from "@/db/queries/export";
-import { works, projects, submissions, tags } from "@/db/schema";
 
 let ctx: ReturnType<typeof createTestContext>;
 beforeEach(() => {

@@ -4,8 +4,8 @@
 // 被拒(终态负向)→ destructive 软红;已撤稿(中止)→ 中性。
 // 纯展示组件,可在 server 组件中直接使用。
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import type { SubmissionStatus } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 const STATUS_CLASSNAME: Record<SubmissionStatus, string> = {
   在审: "bg-primary/10 text-primary border-primary/20",

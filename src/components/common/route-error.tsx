@@ -6,6 +6,7 @@
 // error.tsx 必须是 client 组件且默认导出,接收 Next 注入的 { error, reset }。
 import { useEffect } from "react";
 import Link from "next/link";
+
 import { TriangleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

@@ -2,11 +2,11 @@
 //
 // createTag/renameTag/deleteTag:空名/超长拦截、唯一冲突友好提示(isUniqueViolation)、
 // 删除经外键 onDelete:cascade 自动清理 entity_tags。
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { eq } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { makeTag, makeWork, tagEntity } from "../helpers/factories";
 import { createTestContext, type TestDb } from "../helpers/test-db";
-import { makeWork, makeTag, tagEntity } from "../helpers/factories";
 
 const holder = vi.hoisted(() => ({ db: null as unknown as TestDb }));
 vi.mock("@/db", () => ({
@@ -17,8 +17,8 @@ vi.mock("@/db", () => ({
 const revalidateMock = vi.hoisted(() => vi.fn());
 vi.mock("next/cache", () => ({ revalidatePath: revalidateMock }));
 
-import { createTag, renameTag, deleteTag } from "@/lib/actions/tags";
-import { tags, entity_tags } from "@/db/schema";
+import { entity_tags, tags } from "@/db/schema";
+import { createTag, deleteTag, renameTag } from "@/lib/actions/tags";
 
 let ctx: ReturnType<typeof createTestContext>;
 beforeEach(() => {

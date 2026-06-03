@@ -3,7 +3,7 @@
 // 空库按 drizzle/*.sql 全量迁移后,应得到 spec 第四节的 6 张表,以及关键索引
 //(尤其是 0001 引入的 (work_id,round) 唯一索引,P0-2 的防重复轮次约束)。
 // 这同时是测试基建(test-db helper)的冒烟验证:helper 跑不通这里会第一时间红。
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { createTestSqlite, migrationTags } from "./helpers/test-db";
 

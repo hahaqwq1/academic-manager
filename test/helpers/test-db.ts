@@ -7,11 +7,10 @@
 // - 建表方式刻意复用真实迁移 SQL(drizzle/*.sql),而非 schema.ts 现造表:这样测试覆盖的就是
 //   线上 `db:migrate` 实际产生的结构(含 0001 的 (work_id,round) 唯一索引),迁移漂移能被测出。
 // - 用 `:memory:` 库:零文件锁、天然隔离,每个测试文件一份,跑完即弃。
-import { readFileSync } from "node:fs";
-import path from "node:path";
-
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 import * as schema from "@/db/schema";
 

@@ -5,12 +5,12 @@
 //
 // 纯展示组件,无交互,可在 server 组件中直接使用(无需 "use client")。
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import {
   WORK_TYPE_LABELS,
   type WorkStatus,
   type WorkType,
 } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 // 作品类型徽标:中性灰底,弱化呈现(类型本身不传达紧迫度)。
 export function WorkTypeBadge({ type }: { type: WorkType }) {

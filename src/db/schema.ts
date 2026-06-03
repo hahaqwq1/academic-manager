@@ -11,29 +11,29 @@
 //   生成的 SQL 仍是 text、零迁移;DB 行类型由此端到端带上联合类型,消除各处 `as` 强转。
 //   枚举源唯一仍在 src/lib/constants.ts(zod 校验同源)。
 // - 索引/唯一索引在第三个回调参数里以数组形式声明,索引名唯一且语义明确。
+import { sql } from "drizzle-orm";
 import {
-  sqliteTable,
+  check,
+  index,
   integer,
   real,
+  sqliteTable,
   text,
-  index,
   uniqueIndex,
-  check,
 } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
 
 // 用相对路径(非 @/ 别名):本文件会被 drizzle-kit / tsx 等工具直接加载,
 // 这些工具未必解析 tsconfig 的 @/ 路径别名,相对路径最稳。
 import {
-  WORK_TYPES,
-  WORK_STATUSES,
   AUTHOR_ROLES,
+  CURRENCIES,
+  ENTITY_TYPES,
   PROJECT_LEVELS,
   PROJECT_ROLES,
   PROJECT_STATUSES,
   SUBMISSION_STATUSES,
-  ENTITY_TYPES,
-  CURRENCIES,
+  WORK_STATUSES,
+  WORK_TYPES,
 } from "../lib/constants";
 
 // 当前时间的 ISO8601 字符串:构造一个 Date 实例并调用 toISOString()。

@@ -6,14 +6,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
 import { ArrowLeft } from "lucide-react";
 
-import { getProjectById } from "@/db/queries/projects";
-import { listAllTags } from "@/db/queries/tags";
-import { updateProject } from "@/lib/actions/projects";
 import { PageHeader } from "@/components/common/page-header";
 import { ProjectForm } from "@/components/projects/project-form";
 import { Button } from "@/components/ui/button";
+import { getProjectById } from "@/db/queries/projects";
+import { listAllTags } from "@/db/queries/tags";
+import { updateProject } from "@/lib/actions/projects";
 
 export const metadata: Metadata = { title: "编辑项目" };
 

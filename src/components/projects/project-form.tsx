@@ -11,22 +11,8 @@
 // 成功时 action 自身 redirect,无需在此处理。
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
 
-import {
-  CURRENCIES,
-  PROJECT_LEVELS,
-  PROJECT_ROLES,
-  PROJECT_STATUSES,
-  type Currency,
-  type ProjectLevel,
-  type ProjectRole,
-  type ProjectStatus,
-} from "@/lib/constants";
-import type { ProjectInput } from "@/lib/validations";
-import type { ProjectActionState } from "@/lib/actions/projects";
-import type { Project, Tag } from "@/db/schema";
-import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +27,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { Project, Tag } from "@/db/schema";
+import type { ProjectActionState } from "@/lib/actions/projects";
+import {
+  CURRENCIES,
+  type Currency,
+  PROJECT_LEVELS,
+  PROJECT_ROLES,
+  PROJECT_STATUSES,
+  type ProjectLevel,
+  type ProjectRole,
+  type ProjectStatus,
+} from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import type { ProjectInput } from "@/lib/validations";
 
 interface ProjectFormProps {
   action: (input: ProjectInput) => Promise<ProjectActionState>;
